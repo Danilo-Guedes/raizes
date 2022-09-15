@@ -1,6 +1,5 @@
 from playwright.sync_api import sync_playwright
 import os
-import time
 from dotenv import load_dotenv
 
 
@@ -19,9 +18,9 @@ def main():
 
         page.locator('id=username').fill(os.getenv('BLING_USERNAME'))
         page.locator('id=senha').fill(os.getenv('BLING_PASSWORD'))
-        page.locator('//*[@id="login-buttons-site"]/button').click()
+        page.locator("button:has-text('Entrar')").click()
 
-        time.sleep(5000)
+        page.wait_for_timeout(5000)
         print('finalizou')
         browser.close()
 
