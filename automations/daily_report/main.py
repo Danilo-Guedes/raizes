@@ -1,6 +1,7 @@
 from playwright.sync_api import sync_playwright
-import os
 from dotenv import load_dotenv
+import os
+from pathlib import Path
 from datetime import date
 
 
@@ -11,6 +12,14 @@ def main():
 
 def download_bling_sales_csv():
     """log in to Bling ERP, browse and saves sales csv file"""
+    path = Path()
+
+    # print(path.cwd())
+    # download_file_path = path.resolve().joinpath(
+    #     '/excel')
+    download_file_path = path.cwd()
+    print(download_file_path)
+    print(f"{download_file_path}/excel/daily_report.txt")
 
     sales_date_str = input('Qual data deseja pesquisar?  : ')
 
@@ -55,7 +64,8 @@ def download_bling_sales_csv():
         # # Wait for the download process to complete
         print("o path do download", download.path())
         # # Save downloaded file somewhere
-        # # download.save_as("/path/to/save/download/at.txt") INCLUIR AQUI O PATH PARA SALVAR O ARQUIVO
+
+        download.save_as(f"{download_file_path}/excel/daily_report.txt")
 
         page.wait_for_timeout(5000)
 
