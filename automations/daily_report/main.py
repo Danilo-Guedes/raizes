@@ -42,13 +42,26 @@ def download_bling_sales_csv():
         page.locator("#campo1").click()
         page.locator("#campo1").select_option(value="p")
 
+        page.wait_for_timeout(1000)
+
         page.locator("#btn_visualizar").click()
 
-        page.locator("#exportarRelatorio").click()
-        page.locator("button:has-text('Exportar')").click()
-        page.wait_for_timeout(10000)
+        with page.expect_download() as download_info:
+            #     # Perform the action that initiates download
+            page.locator("#exportarRelatorio").click()
+            page.locator("button:has-text('Exportar')").click()
 
-        print('finalizou')
+        download = download_info.value
+        # # Wait for the download process to complete
+        print("o path do download", download.path())
+        # # Save downloaded file somewhere
+        # # download.save_as("/path/to/save/download/at.txt") INCLUIR AQUI O PATH PARA SALVAR O ARQUIVO
+
+        page.wait_for_timeout(5000)
+
+        print('Arquivo baixado e pronto para processamento dos dados')
+
+        page.close()
         browser.close()
 
 
