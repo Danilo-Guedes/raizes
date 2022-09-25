@@ -28,3 +28,68 @@ Time: 16:4
 Group ID: CkvTMz00lbUBaJaBKeYXYO
 Message: ta estrahno
 --------------------
+Date: 24/9/2022
+Time: 22:36
+Phone Number: +5511995044483
+Message: Hello
+--------------------
+Date: 24/9/2022
+Time: 22:38
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: ta estrahno
+--------------------
+Date: 24/9/2022
+Time: 22:40
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: ta estrahno2
+--------------------
+Date: 24/9/2022
+Time: 22:41
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O número TOTAL de REFEIÇÕES VENDIDAS em 23/09/2022 foi => 121 Sendo PESSOAS ATENDIDAS NO LOCAL => 87 Pessaos que RETIRARAM a marmita no local => 7 E pessaos que PEDIRAM NOS APPS DE DELIVERY => 27 E essa é tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda12 Buffet a vontade (Seg a Sexta) * 87.0 2150.3140 Refeicao Delivery (Seg a Sex) * 27.0 674.7344 Suco-refresco do dia 49.0 244.251 (Viagem salão) Refeicao Seg a Sexta * 7.0 160.9325 Marmita Raiz 8.0 119.92
+--------------------
+Date: 24/9/2022
+Time: 22:46
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O número TOTAL de REFEIÇÕES VENDIDAS em 23/09/2022 foi => **121 ** Sendo PESSOAS ATENDIDAS NO LOCAL => **87** Pessaos que RETIRARAM a marmita no local => **7** E pessaos que PEDIRAM NOS APPS DE DELIVERY => **27** E essa é tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda12 Buffet a vontade (Seg a Sexta) * 87.0 2150.3140 Refeicao Delivery (Seg a Sex) * 27.0 674.7344 Suco-refresco do dia 49.0 244.251 (Viagem salão) Refeicao Seg a Sexta * 7.0 160.9325 Marmita Raiz 8.0 119.92
+--------------------
+Date: 24/9/2022
+Time: 22:51
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O número TOTAL de REFEIÇÕES VENDIDAS em 23/09/2022 foi => *121 * Sendo PESSOAS ATENDIDAS NO LOCAL => *87* Pessaos que RETIRARAM a marmita no local => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* E essa é tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda12 Buffet a vontade (Seg a Sexta) * 87.0 2150.3140 Refeicao Delivery (Seg a Sex) * 27.0 674.7344 Suco-refresco do dia 49.0 244.251 (Viagem salão) Refeicao Seg a Sexta * 7.0 160.9325 Marmita Raiz 8.0 119.92
+--------------------
+Date: 24/9/2022
+Time: 22:54
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: teste
+--------------------
+Date: 24/9/2022
+Time: 22:56
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: teste
+--------------------
+Date: 24/9/2022
+Time: 23:0
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O número TOTAL de REFEIÇÕES VENDIDAS em 23/09/2022 foi => *121 * Sendo pessoas ATENDIDAS NO LOCAL => *87* Pessaos que retiraram a marmita NO LOCAL => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* E essa é tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda12 Buffet a vontade (Seg a Sexta) * 87.0 2150.3140 Refeicao Delivery (Seg a Sex) * 27.0 674.7344 Suco-refresco do dia 49.0 244.251 (Viagem salão) Refeicao Seg a Sexta * 7.0 160.9325 Marmita Raiz 8.0 119.92
+--------------------
+Date: 24/9/2022
+Time: 23:17
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O numero TOTAL de REFEICOES VENDIDAS em 23/09/2022 foi => *121 * Sendo pessoas ATENDIDAS NO LOCAL => *87* Pessaos que retiraram a marmita NO LOCAL => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* E essa eh a tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda12 Buffet a vontade (Seg a Sexta) * 87.0 2150.3140 Refeicao Delivery (Seg a Sex) * 27.0 674.7344 Suco-refresco do dia 49.0 244.251 (Viagem salão) Refeicao Seg a Sexta * 7.0 160.9325 Marmita Raiz 8.0 119.92
+--------------------
+Date: 24/9/2022
+Time: 23:38
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O numero TOTAL de REFEICOES VENDIDAS na(o) sexta dia 23/09/2022 foi => *121* Sendo pessoas ATENDIDAS NO LOCAL => *87* Pessaos que retiraram a marmita NO LOCAL => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* E essa eh a tabela dos 5 produtos com maior valor de venda | | Produto | Qtde | Total Venda ||---:|:--------------------------------------|-------:|--------------:|| 12 | Buffet a vontade (Seg a Sexta) * | 87 | 2150.31 || 40 | Refeicao Delivery (Seg a Sex) * | 27 | 674.73 || 44 | Suco-refresco do dia | 49 | 244.25 || 1 | (Viagem salão) Refeicao Seg a Sexta * | 7 | 160.93 || 25 | Marmita Raiz | 8 | 119.92 |
+--------------------
+Date: 24/9/2022
+Time: 23:56
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O numero *total* de REFEICOES VENDIDAS na(o) sexta dia 23/09/2022 foi => *121* Sendo pessoas ATENDIDAS NO LOCAL => *87* Pessaos que retiraram a marmita NO LOCAL => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* E essa eh a tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda Buffet a vontade (Seg a Sexta) * 87.0 2150.31 Refeicao Delivery (Seg a Sex) * 27.0 674.73 Suco-refresco do dia 49.0 244.25(Viagem salão) Refeicao Seg a Sexta * 7.0 160.93 Marmita Raiz 8.0 119.92
+--------------------
+Date: 25/9/2022
+Time: 0:2
+Group ID: CkvTMz00lbUBaJaBKeYXYO
+Message: O numero *total* de REFEICOES VENDIDAS na(o) sexta dia 23/09/2022 foi => *121* Sendo pessoas ATENDIDAS NO LOCAL => *87* Pessaos que retiraram a marmita NO LOCAL => *7* E pessaos que PEDIRAM NOS APPS DE DELIVERY => *27* O total de vendas foi => R$4493.479999999999 E essa eh a tabela dos 5 produtos com maior valor de venda Produto Qtde Total Venda Buffet a vontade (Seg a Sexta) * 87.0 2150.31 Refeicao Delivery (Seg a Sex) * 27.0 674.73 Suco-refresco do dia 49.0 244.25(Viagem salão) Refeicao Seg a Sexta * 7.0 160.93 Marmita Raiz 8.0 119.92
+--------------------

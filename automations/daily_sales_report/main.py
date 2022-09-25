@@ -5,18 +5,19 @@ import pywhatkit
 import os
 from pathlib import Path
 from datetime import date, datetime
+import locale
 
 
 def main():
-    # file, search_date = download_bling_sales_csv()
-    file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    search_date = date(2022, 9, 23)
+    file, search_date = download_bling_sales_csv()
+    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
+    # search_date = date(2022, 9, 23)
 
-    general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df = make_csv_analysis(
+    general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df, total_sales = make_csv_analysis(
         file)
 
     send_whatsapp_msg(general_total, in_place_meals, in_place_delivery,
-                      third_party_delivery, top_5_sales_df, search_date)
+                      third_party_delivery, top_5_sales_df, total_sales,  search_date)
 
 
 def download_bling_sales_csv():
@@ -30,9 +31,7 @@ def download_bling_sales_csv():
 
     print('Iniciando extração dos dados do ERP Bling')
 
-    split = sales_date_str.split('/')
-
-    selected_date = date(int(split[2]), int(split[1]), int(split[0]))
+    selected_date = datetime.strptime(sales_date_str, '%d/%m/%Y').date()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=False)
@@ -66,14 +65,10 @@ def download_bling_sales_csv():
             page.locator("button:has-text('Exportar')").click()
 
         download = download_info.value
-        # # Wait for the download process to complete
-        # # Save downloaded file somewhere
 
         file_path = f"{download_folder_path}/daily_sales_report.csv"
 
         download.save_as(file_path)
-
-        # page.wait_for_timeout(5000)
 
         print('Arquivo baixado e pronto para processamento dos dados')
 
@@ -86,14 +81,11 @@ def download_bling_sales_csv():
 def make_csv_analysis(file):
     df = pd.read_csv(file, sep=";",  decimal=',',
                      thousands='.', encoding="utf_8")
-    # removing second column with no data and last row with totals
     df = df.drop(columns=df.columns[1])[:-1]
-    # print(df.describe())
-    # print('#' * 130)
     df_by_value = df.sort_values(by=['Total Venda'], ascending=False)
     df = df.sort_values(by=['Qtde'], ascending=False)
 
-    # print(df_by_value.head()[['Produto', 'Qtde', 'Total Venda']])
+    total_sales = round(df['Total Venda'].sum(), 2)
 
     top_five_by_value = df_by_value.head()[['Produto', 'Qtde', 'Total Venda']]
 
@@ -106,8 +98,6 @@ def make_csv_analysis(file):
     third_party_delivery = df[df['Produto'].str.contains(
         'Delivery', regex=False)]
 
-    # print('#' * 130)
-    # print(produtcs_to_count_as_client)
     number_of_clients_in_bling = produtcs_to_count_as_client['Qtde'].sum().astype(
         'int')
 
@@ -120,49 +110,44 @@ def make_csv_analysis(file):
     number_of_in_place_meals = number_of_clients_in_bling - \
         number_of_in_place_delivery - number_of_third_party_delivery
 
-    return [number_of_clients_in_bling, number_of_in_place_meals, number_of_in_place_delivery, number_of_third_party_delivery, top_five_by_value]
+    return [number_of_clients_in_bling, number_of_in_place_meals, number_of_in_place_delivery, number_of_third_party_delivery, top_five_by_value, total_sales]
 
 
-def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df, date):
-    print('#' * 130)
-    print(
-        f"O número TOTAL de REFEIÇÕES VENDIDAS em {date.strftime('%d/%m/%Y')} foi => {general_total}")
-    print(
-        f"Sendo PESSOAS ATENDIDAS NO LOCAL => {in_place_meals}")
-    print(
-        f"Pessaos que RETIRARAM a marmita no local => {in_place_delivery}")
-    print(""""""
-          f"E pessaos que PEDIRAM NOS APPS DE DELIVERY => {third_party_delivery}")
+def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df, total_money, date):
+    # print('#' * 130)
+    # print(
+    #     f"O número TOTAL de REFEIÇÕES VENDIDAS em {date.strftime('%d/%m/%Y')} foi => {general_total}")
+    # print(
+    #     f"Sendo PESSOAS ATENDIDAS NO LOCAL => {in_place_meals}")
+    # print(
+    #     f"Pessaos que RETIRARAM a marmita no local => {in_place_delivery}")
+    # print(""""""
+    #       f"E pessaos que PEDIRAM NOS APPS DE DELIVERY => {third_party_delivery}")
 
-    print('_' * 130)
+    # print('_' * 130)
 
-    print('E essa é tabela dos 5 produtos com maior valor de venda')
-    print(top_5_sales_df)
+    # print('E essa é tabela dos 5 produtos com maior valor de venda')
+    # print(top_5_sales_df)
 
     msg = f"""
+    O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(date, '%A')} dia {date.strftime('%d/%m/%Y')} foi => *{general_total}*   
+    ATENDIDAS EM MESA => *{in_place_meals}* 
+    LEVOU MARMITA => *{in_place_delivery}*
+    APPS DE DELIVERY => *{third_party_delivery}*
 
-        O número TOTAL de REFEIÇÕES VENDIDAS em {date.strftime('%d/%m/%Y')} foi => {general_total}
-    
-        Sendo PESSOAS ATENDIDAS NO LOCAL => {in_place_meals}
-    
-        Pessaos que RETIRARAM a marmita no local => {in_place_delivery}
+    O total de vendas foi => R$ {total_money}
 
-        E pessaos que PEDIRAM NOS APPS DE DELIVERY => {third_party_delivery}
-
-
-        E essa é tabela dos 5 produtos com maior valor de venda
-        {top_5_sales_df}
+    E essa eh a tabela dos 5 produtos com maior valor de venda
+    {top_5_sales_df.to_string(index=False)}
     """
 
-    TESTE_MSG = 'BLABLA BALBLA'
-    # print(msg)
-
-    hour = int(datetime.now().time().hour)
-    minute = int(datetime.now().time().minute + 1)
+    hour = datetime.now().hour
+    minute = datetime.now().minute + 1
 
     try:
-        pywhatkit.sendwhatmsg_to_group(
-            'CkvTMz00lbUBaJaBKeYXYO', 'ta estrahno', hour, minute, 3, False, 3)
+        print(msg)
+        pywhatkit.sendwhatmsg_to_group(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
+                                       time_hour=hour, time_min=minute, wait_time=10, tab_close=True, close_time=5)
 
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
@@ -170,4 +155,6 @@ def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_pa
 
 if __name__ == '__main__':
     load_dotenv()
+    # setar locale para português
+    locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
     main()
