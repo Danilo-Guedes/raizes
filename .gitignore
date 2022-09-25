@@ -1,7 +1,7 @@
 
 excel/
 #pasta onde o csv é salvo
-
+PyWhatKit_DB.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
