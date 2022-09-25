@@ -1,7 +1,8 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from dotenv import load_dotenv
-import pywhatkit
+import pywhatkit as pwk
+from tabulate import tabulate
 import os
 from pathlib import Path
 from datetime import date, datetime
@@ -130,15 +131,15 @@ def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_pa
     # print(top_5_sales_df)
 
     msg = f"""
-    O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(date, '%A')} dia {date.strftime('%d/%m/%Y')} foi => *{general_total}*   
-    ATENDIDAS EM MESA => *{in_place_meals}* 
-    LEVOU MARMITA => *{in_place_delivery}*
-    APPS DE DELIVERY => *{third_party_delivery}*
+O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(date, '%A')} dia {date.strftime('%d/%m/%Y')} foi => *{general_total}*   
+ATENDIDAS EM MESA => *{in_place_meals}* 
+LEVOU MARMITA => *{in_place_delivery}*
+APPS DE DELIVERY => *{third_party_delivery}*
 
-    O total de vendas foi => R$ {total_money}
+O total de vendas foi => R$ {total_money}
 
-    E essa eh a tabela dos 5 produtos com maior valor de venda
-    {top_5_sales_df.to_string(index=False)}
+E essa eh a tabela dos 5 produtos com maior valor de venda
+{tabulate(top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
     """
 
     hour = datetime.now().hour
@@ -146,8 +147,8 @@ def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_pa
 
     try:
         print(msg)
-        pywhatkit.sendwhatmsg_to_group(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
-                                       time_hour=hour, time_min=minute, wait_time=10, tab_close=True, close_time=5)
+        pwk.sendwhatmsg_to_group(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
+                                 time_hour=hour, time_min=minute, wait_time=10, tab_close=True, close_time=5)
 
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
