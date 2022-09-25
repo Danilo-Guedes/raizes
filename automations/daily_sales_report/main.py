@@ -142,7 +142,7 @@ def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_pa
     """
 
     hour = datetime.now().hour
-    minute = datetime.now().minute + 1
+    minute = datetime.now().minute + 2
 
     try:
         print(msg)
