@@ -147,8 +147,8 @@ E essa eh a tabela dos 5 produtos com maior valor de venda
 
     try:
         print(msg)
-        pwk.sendwhatmsg_to_group(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
-                                 time_hour=hour, time_min=minute, wait_time=10, tab_close=True, close_time=5)
+        pwk.sendwhatmsg_to_group_instantly(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
+                                           wait_time=10, tab_close=True, close_time=5)
 
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
