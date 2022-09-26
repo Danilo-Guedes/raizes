@@ -7,18 +7,16 @@ import os
 from pathlib import Path
 from datetime import date, datetime
 import locale
+from classes import DailyInfo
 
 
 def main():
     file, search_date = download_bling_sales_csv()
     # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = date(2022, 9, 23)
+    # search_date = '23/09/2022'
+    info = make_csv_analysis(file, search_date)
 
-    general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df, total_sales = make_csv_analysis(
-        file)
-
-    send_whatsapp_msg(general_total, in_place_meals, in_place_delivery,
-                      third_party_delivery, top_5_sales_df, total_sales,  search_date)
+    send_whatsapp_msg(info)
 
 
 def download_bling_sales_csv():
@@ -76,10 +74,10 @@ def download_bling_sales_csv():
         page.close()
         browser.close()
 
-        return [file_path, selected_date]
+        return file_path, selected_date
 
 
-def make_csv_analysis(file):
+def make_csv_analysis(file, searched_date):
     df = pd.read_csv(file, sep=";",  decimal=',',
                      thousands='.', encoding="utf_8")
     df = df.drop(columns=df.columns[1])[:-1]
@@ -111,39 +109,28 @@ def make_csv_analysis(file):
     number_of_in_place_meals = number_of_clients_in_bling - \
         number_of_in_place_delivery - number_of_third_party_delivery
 
-    return [number_of_clients_in_bling, number_of_in_place_meals, number_of_in_place_delivery, number_of_third_party_delivery, top_five_by_value, total_sales]
+    return DailyInfo(number_of_clients_in_bling,
+                     number_of_in_place_meals,
+                     number_of_in_place_delivery,
+                     number_of_third_party_delivery,
+                     top_five_by_value, total_sales,
+                     searched_date
+                     )
 
 
-def send_whatsapp_msg(general_total, in_place_meals, in_place_delivery, third_party_delivery, top_5_sales_df, total_money, date):
-    # print('#' * 130)
-    # print(
-    #     f"O número TOTAL de REFEIÇÕES VENDIDAS em {date.strftime('%d/%m/%Y')} foi => {general_total}")
-    # print(
-    #     f"Sendo PESSOAS ATENDIDAS NO LOCAL => {in_place_meals}")
-    # print(
-    #     f"Pessaos que RETIRARAM a marmita no local => {in_place_delivery}")
-    # print(""""""
-    #       f"E pessaos que PEDIRAM NOS APPS DE DELIVERY => {third_party_delivery}")
-
-    # print('_' * 130)
-
-    # print('E essa é tabela dos 5 produtos com maior valor de venda')
-    # print(top_5_sales_df)
+def send_whatsapp_msg(msg_info):
 
     msg = f"""
-O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(date, '%A')} dia {date.strftime('%d/%m/%Y')} foi => *{general_total}*   
-ATENDIDAS EM MESA => *{in_place_meals}* 
-LEVOU MARMITA => *{in_place_delivery}*
-APPS DE DELIVERY => *{third_party_delivery}*
+O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} foi => *{msg_info.general_total}*   
+ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
+LEVOU MARMITA => *{msg_info.in_place_delivery}*
+APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
-O total de vendas foi => R$ {total_money}
+O total de vendas foi => R$ {msg_info.total_sales}
 
 E essa eh a tabela dos 5 produtos com maior valor de venda
-{tabulate(top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
+{tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
     """
-
-    hour = datetime.now().hour
-    minute = datetime.now().minute + 2
 
     try:
         print(msg)

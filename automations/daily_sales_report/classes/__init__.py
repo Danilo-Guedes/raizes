@@ -1,0 +1,1 @@
+from .DailyInfo import DailyInfo
