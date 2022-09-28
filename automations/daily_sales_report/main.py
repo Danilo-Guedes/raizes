@@ -86,7 +86,7 @@ def make_csv_analysis(file, searched_date):
 
     total_sales = round(df['Total Venda'].sum(), 2)
 
-    top_five_by_value = df_by_value.head()[['Produto', 'Qtde', 'Total Venda']]
+    top_seven_by_value = df_by_value.head(7)[['Produto', 'Qtde', 'Total Venda']]
 
     produtcs_to_count_as_client = df[df['Produto'].str.contains(
         '*', regex=False)]
@@ -113,7 +113,7 @@ def make_csv_analysis(file, searched_date):
                      number_of_in_place_meals,
                      number_of_in_place_delivery,
                      number_of_third_party_delivery,
-                     top_five_by_value, total_sales,
+                     top_seven_by_value, total_sales,
                      searched_date
                      )
 
@@ -128,7 +128,7 @@ APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
 O total de vendas foi => R$ {msg_info.total_sales}
 
-E essa eh a tabela dos 5 produtos com maior valor de venda
+E essa eh a tabela dos 7 produtos com maior valor de venda
 {tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
     """
 
