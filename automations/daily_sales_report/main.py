@@ -11,9 +11,10 @@ from classes import DailyInfo
 
 
 def main():
-    file, search_date = download_bling_sales_csv()
-    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = '23/09/2022'
+    # file, search_date = download_bling_sales_csv()
+    file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
+    # search_date = '04/10/2022'
+    search_date = datetime(2022, 10, 4)
     info = make_csv_analysis(file, search_date)
 
     send_whatsapp_msg(info)
@@ -131,14 +132,44 @@ O total de vendas foi => R$ {msg_info.total_sales}
 E essa eh a tabela dos 7 produtos com maior valor de venda
 {tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
     """
+ 
 
+    app_data_dir = os.getenv('LOCALAPPDATA')
+    # user_data_env = os.path.join(app_data_dir, ')
+    
     try:
-        print(msg)
-        pwk.sendwhatmsg_to_group_instantly(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
-                                           wait_time=10, tab_close=True, close_time=5)
-
+        # with sync_playwright() as p:
+        #     browser = p.chromium.launch_persistent_context()
+        #     context = browser.new_context()
+        #     page = context.new_page()
+        #     page.goto(os.getenv('BLING_LOGIN_URL'))
+        #     print(f"abrindo {page.title()}")
+           print(os.getenv('LOCALAPPDATA'))
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
+
+
+# def send_whatsapp_msg(msg_info):
+
+#     msg = f"""
+# O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} foi => *{msg_info.general_total}*   
+# ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
+# LEVOU MARMITA => *{msg_info.in_place_delivery}*
+# APPS DE DELIVERY => *{msg_info.third_party_delivery}*
+
+# O total de vendas foi => R$ {msg_info.total_sales}
+
+# E essa eh a tabela dos 7 produtos com maior valor de venda
+# {tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
+#     """
+
+#     try:
+#         print(msg)
+#         pwk.sendwhatmsg_to_group_instantly(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
+#                                            wait_time=10, tab_close=True, close_time=5)
+
+#     except Exception as Error:
+#         print(f'aqui deu ruim {Error}')
 
 
 if __name__ == '__main__':
