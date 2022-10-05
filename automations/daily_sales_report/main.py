@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import date, datetime
 import locale
 from classes import DailyInfo
+from appdirs import user_config_dir
 
 
 def main():
@@ -134,17 +135,20 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
     """
  
 
-    app_data_dir = os.getenv('LOCALAPPDATA')
+    chrome_dir = user_config_dir('chromium')
+    profile_path = os.path.join(chrome_dir, 'Default')
+    print(profile_path)
     # user_data_env = os.path.join(app_data_dir, ')
     
     try:
-        # with sync_playwright() as p:
-        #     browser = p.chromium.launch_persistent_context()
-        #     context = browser.new_context()
-        #     page = context.new_page()
-        #     page.goto(os.getenv('BLING_LOGIN_URL'))
-        #     print(f"abrindo {page.title()}")
-           print(os.getenv('LOCALAPPDATA'))
+        with sync_playwright() as p:
+            context = p.chromium.launch_persistent_context(profile_path, headless=False  )
+        
+            page = context.new_page()
+            # page.goto('https://web.whatsapp.com')
+            page.goto('https://www.youtube.com')
+            print(f"abrindo {page.title()}")
+            page.wait_for_timeout(20000)
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
 
