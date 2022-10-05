@@ -1,5 +1,6 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
+import time
 from dotenv import load_dotenv
 import pywhatkit as pwk
 from tabulate import tabulate
@@ -9,6 +10,11 @@ from datetime import date, datetime
 import locale
 from classes import DailyInfo
 from appdirs import user_config_dir
+
+from selenium import webdriver
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
 
 
 def main():
@@ -135,22 +141,38 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
     """
  
 
-    chrome_dir = user_config_dir('chromium')
-    profile_path = os.path.join(chrome_dir, 'Default')
-    print(profile_path)
-    # user_data_env = os.path.join(app_data_dir, ')
+    # chrome_dir = user_config_dir('google-chrome')
+    # profile_path = os.path.join(chrome_dir, 'Default', 'Profile 1')
+    # print(profile_path)
     
-    try:
-        with sync_playwright() as p:
-            context = p.chromium.launch_persistent_context(profile_path, headless=False  )
-        
-            page = context.new_page()
-            # page.goto('https://web.whatsapp.com')
-            page.goto('https://www.youtube.com')
-            print(f"abrindo {page.title()}")
-            page.wait_for_timeout(20000)
-    except Exception as Error:
-        print(f'aqui deu ruim {Error}')
+    # try:
+    #     with sync_playwright() as p:
+    #         context = p.chromium.launch_persistent_context(user_data_dir=profile_path, headless=False)
+    #         page = context.new_page()
+            
+    #         # page.goto('https://web.whatsapp.com')
+    #         page.goto('https://www.youtube.com')
+    #         # page.goto('chrome://version')
+    #         print(f"abrindo {page.title()}")
+    #         page.wait_for_timeout(20000)
+    # except Exception as Error:
+    #     print(f'aqui deu ruim {Error}')
+
+    chrome_dir = user_config_dir('google-chrome')
+    profile_path = os.path.join(chrome_dir, 'Default')
+    profile_path2 = os.path.join(chrome_dir, 'Default', 'Danilo Guedes')
+    print(profile_path)
+
+    service = Service(ChromeDriverManager().install())
+    chrome_options = Options()
+    chrome_options.add_argument(f'--user-data-dir={profile_path}')
+    # chrome_options.add_argument('--profile-directory=Default')
+    browser = webdriver.Chrome(service=service , options=chrome_options)
+    browser.get('http://www.youtube.com.br')
+    time.sleep(5)
+    browser.close()
+    
+
 
 
 # def send_whatsapp_msg(msg_info):
