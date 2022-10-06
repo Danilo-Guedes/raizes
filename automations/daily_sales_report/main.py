@@ -33,8 +33,8 @@ def download_bling_sales_csv():
     selected_date = datetime.strptime(sales_date_str, '%d/%m/%Y').date()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False)
-        page = browser.new_page()
+        browser = p.chromium.launch(headless=False, args=['--start-maximized'])
+        page = browser.new_page(no_viewport=True)
         page.goto(os.getenv('BLING_LOGIN_URL'))
         print(f"abrindo {page.title()}")
 
@@ -153,7 +153,12 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
     
     try:
         with sync_playwright() as p:
-            context = p.chromium.launch_persistent_context(user_data_dir=profile_path, headless=False, viewport={ 'width': 900, 'height': 900 })
+            context = p.chromium.launch_persistent_context(
+            user_data_dir=profile_path, 
+            headless=False, 
+            args=['--start-maximized'],
+            no_viewport=True
+            )
             page = context.new_page()
 
             url = f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
