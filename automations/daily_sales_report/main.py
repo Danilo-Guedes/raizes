@@ -81,7 +81,7 @@ def make_csv_analysis(file, searched_date):
     df = pd.read_csv(file, sep=";",  decimal=',',
                      thousands='.', encoding="utf_8")
     df.columns = df.columns.str.replace(' ', '_').str.lower()
-    print(df.columns)
+    # print(df.columns)
     df = df.drop(columns=df.columns[1])[:-1]
     
     df_by_value = df.sort_values(by=['total_venda'], ascending=False)
@@ -98,7 +98,7 @@ def make_csv_analysis(file, searched_date):
 
         ).reindex(columns=["qtde", "total_venda", "produto"])
 
-    print(top_seven_by_value)
+    # print(top_seven_by_value)
 
     produtcs_to_count_as_client = df[df['produto'].str.contains(
         '*', regex=False)]
