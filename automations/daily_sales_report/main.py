@@ -103,8 +103,9 @@ def make_csv_analysis(file, searched_date):
     produtcs_to_count_as_client = df[df['produto'].str.contains(
         '*', regex=False)]
 
-    in_place_delivery = df[df['produto'].str.contains(
-        'Viagem salão', regex=False)]
+    in_place_delivery = df[df['produto'].str.startswith('(Viagem')]
+
+    print(in_place_delivery)
 
     third_party_delivery = df[df['produto'].str.contains(
         'Delivery', regex=False)]
@@ -135,7 +136,7 @@ def send_whatsapp_msg(msg_info):
     msg = f"""
 Em {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos *{msg_info.general_total}* refeições no *TOTAL*
 
-O *RECEITA* foi de => R$ {msg_info.total_sales}
+O *RECEITA* foi de => {locale.currency(msg_info.total_sales, grouping=True)}
 
 Sendo que:   
 ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
