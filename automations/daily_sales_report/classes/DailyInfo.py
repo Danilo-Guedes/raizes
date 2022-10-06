@@ -9,6 +9,6 @@ class DailyInfo:
     in_place_meals: int
     in_place_delivery: int
     third_party_delivery: int
-    top_5_sales_df: pd.DataFrame
+    top_7_sales_df: pd.DataFrame
     total_sales: float
     search_date: datetime.date

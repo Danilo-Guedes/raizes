@@ -1,6 +1,5 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
-import time
 from dotenv import load_dotenv
 import pywhatkit as pwk
 from tabulate import tabulate
@@ -13,10 +12,9 @@ from appdirs import user_config_dir
 
 
 def main():
-    # file, search_date = download_bling_sales_csv()
-    file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = '04/10/2022'
-    search_date = datetime(2022, 10, 4)
+    file, search_date = download_bling_sales_csv()
+    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
+    # search_date = datetime(2022, 10, 4)
     info = make_csv_analysis(file, search_date)
     send_whatsapp_msg(info)
 
@@ -95,10 +93,11 @@ def make_csv_analysis(file, searched_date):
 
     top_seven_by_value = top_seven_by_value.assign(
         total_venda=top_seven_by_value['total_venda'].astype('float16').map(lambda x: locale.currency(x, grouping=True)),
-        qtde=top_seven_by_value['qtde'].astype('int')
-        
-        )
-    print(top_seven_by_value.dtypes)
+        qtde=top_seven_by_value['qtde'].astype('int'),
+        # produto=top_seven_by_value['produto'].astype('string').str[:15],
+
+        ).reindex(columns=["qtde", "total_venda", "produto"])
+
     print(top_seven_by_value)
 
     produtcs_to_count_as_client = df[df['produto'].str.contains(
@@ -133,20 +132,20 @@ def make_csv_analysis(file, searched_date):
 
 def send_whatsapp_msg(msg_info):
 
-
     msg = f"""
 Em {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos *{msg_info.general_total}* refeições no *TOTAL*
 
 O *RECEITA* foi de => R$ {msg_info.total_sales}
+
 Sendo que:   
-    ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
-    LEVOU MARMITA => *{msg_info.in_place_delivery}*
-    APPS DE DELIVERY => *{msg_info.third_party_delivery}*
+ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
+LEVOU MARMITA => *{msg_info.in_place_delivery}*
+APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
 E essa eh a tabela dos 7 produtos com maior valor de venda
-{tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="grid", colalign=['left', 'right', 'right'])}
+
+{tabulate(msg_info.top_7_sales_df, headers='keys', showindex=False, tablefmt="plain" )}
     """
-    print(msg_info.top_5_sales_df.columns)
     print(msg)
 
     chrome_dir = user_config_dir('google-chrome')
@@ -158,12 +157,12 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
             page = context.new_page()
 
             url = f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
-            print(url)
+            # print(url)
             page.goto(url)
             print(f"abrindo {page.title()}")
             page.locator("div [title='Mensagem']").fill(msg)
             page.locator("[aria-label='Enviar']").click()
-            print('Mensagem enviada')
+            print('Sucesso!! Mensagem enviada')
             page.wait_for_timeout(5000)
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
