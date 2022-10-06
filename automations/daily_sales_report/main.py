@@ -11,11 +11,6 @@ import locale
 from classes import DailyInfo
 from appdirs import user_config_dir
 
-from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-
 
 def main():
     # file, search_date = download_bling_sales_csv()
@@ -23,7 +18,6 @@ def main():
     # search_date = '04/10/2022'
     search_date = datetime(2022, 10, 4)
     info = make_csv_analysis(file, search_date)
-
     send_whatsapp_msg(info)
 
 
@@ -88,30 +82,41 @@ def download_bling_sales_csv():
 def make_csv_analysis(file, searched_date):
     df = pd.read_csv(file, sep=";",  decimal=',',
                      thousands='.', encoding="utf_8")
+    df.columns = df.columns.str.replace(' ', '_').str.lower()
+    print(df.columns)
     df = df.drop(columns=df.columns[1])[:-1]
-    df_by_value = df.sort_values(by=['Total Venda'], ascending=False)
-    df = df.sort_values(by=['Qtde'], ascending=False)
+    
+    df_by_value = df.sort_values(by=['total_venda'], ascending=False)
+    df = df.sort_values(by=['qtde'], ascending=False)
 
-    total_sales = round(df['Total Venda'].sum(), 2)
+    total_sales = round(df['total_venda'].sum(), 2)
 
-    top_seven_by_value = df_by_value.head(7)[['Produto', 'Qtde', 'Total Venda']]
+    top_seven_by_value = df_by_value.head(7)[['produto', 'qtde', 'total_venda']]
 
-    produtcs_to_count_as_client = df[df['Produto'].str.contains(
+    top_seven_by_value = top_seven_by_value.assign(
+        total_venda=top_seven_by_value['total_venda'].astype('float16').map(lambda x: locale.currency(x, grouping=True)),
+        qtde=top_seven_by_value['qtde'].astype('int')
+        
+        )
+    print(top_seven_by_value.dtypes)
+    print(top_seven_by_value)
+
+    produtcs_to_count_as_client = df[df['produto'].str.contains(
         '*', regex=False)]
 
-    in_place_delivery = df[df['Produto'].str.contains(
+    in_place_delivery = df[df['produto'].str.contains(
         'Viagem salão', regex=False)]
 
-    third_party_delivery = df[df['Produto'].str.contains(
+    third_party_delivery = df[df['produto'].str.contains(
         'Delivery', regex=False)]
 
-    number_of_clients_in_bling = produtcs_to_count_as_client['Qtde'].sum().astype(
+    number_of_clients_in_bling = produtcs_to_count_as_client['qtde'].sum().astype(
         'int')
 
-    number_of_in_place_delivery = in_place_delivery['Qtde'].sum().astype(
+    number_of_in_place_delivery = in_place_delivery['qtde'].sum().astype(
         'int')
 
-    number_of_third_party_delivery = third_party_delivery['Qtde'].sum().astype(
+    number_of_third_party_delivery = third_party_delivery['qtde'].sum().astype(
         'int')
 
     number_of_in_place_meals = number_of_clients_in_bling - \
@@ -128,74 +133,40 @@ def make_csv_analysis(file, searched_date):
 
 def send_whatsapp_msg(msg_info):
 
-    msg = f"""
-O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} foi => *{msg_info.general_total}*   
-ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
-LEVOU MARMITA => *{msg_info.in_place_delivery}*
-APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
-O total de vendas foi => R$ {msg_info.total_sales}
+    msg = f"""
+Em {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos *{msg_info.general_total}* refeições no *TOTAL*
+
+O *RECEITA* foi de => R$ {msg_info.total_sales}
+Sendo que:   
+    ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
+    LEVOU MARMITA => *{msg_info.in_place_delivery}*
+    APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
 E essa eh a tabela dos 7 produtos com maior valor de venda
-{tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
+{tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="grid", colalign=['left', 'right', 'right'])}
     """
- 
-
-    # chrome_dir = user_config_dir('google-chrome')
-    # profile_path = os.path.join(chrome_dir, 'Default', 'Profile 1')
-    # print(profile_path)
-    
-    # try:
-    #     with sync_playwright() as p:
-    #         context = p.chromium.launch_persistent_context(user_data_dir=profile_path, headless=False)
-    #         page = context.new_page()
-            
-    #         # page.goto('https://web.whatsapp.com')
-    #         page.goto('https://www.youtube.com')
-    #         # page.goto('chrome://version')
-    #         print(f"abrindo {page.title()}")
-    #         page.wait_for_timeout(20000)
-    # except Exception as Error:
-    #     print(f'aqui deu ruim {Error}')
+    print(msg_info.top_5_sales_df.columns)
+    print(msg)
 
     chrome_dir = user_config_dir('google-chrome')
     profile_path = os.path.join(chrome_dir, 'Default')
-    profile_path2 = os.path.join(chrome_dir, 'Default', 'Danilo Guedes')
-    print(profile_path)
-
-    service = Service(ChromeDriverManager().install())
-    chrome_options = Options()
-    chrome_options.add_argument(f'--user-data-dir={profile_path}')
-    # chrome_options.add_argument('--profile-directory=Default')
-    browser = webdriver.Chrome(service=service , options=chrome_options)
-    browser.get('http://www.youtube.com.br')
-    time.sleep(5)
-    browser.close()
     
+    try:
+        with sync_playwright() as p:
+            context = p.chromium.launch_persistent_context(user_data_dir=profile_path, headless=False, viewport={ 'width': 900, 'height': 900 })
+            page = context.new_page()
 
-
-
-# def send_whatsapp_msg(msg_info):
-
-#     msg = f"""
-# O numero *total* de REFEICOES VENDIDAS na(o) {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} foi => *{msg_info.general_total}*   
-# ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
-# LEVOU MARMITA => *{msg_info.in_place_delivery}*
-# APPS DE DELIVERY => *{msg_info.third_party_delivery}*
-
-# O total de vendas foi => R$ {msg_info.total_sales}
-
-# E essa eh a tabela dos 7 produtos com maior valor de venda
-# {tabulate(msg_info.top_5_sales_df, showindex=False, tablefmt="simple", colalign=['left', 'right', 'right'])}
-#     """
-
-#     try:
-#         print(msg)
-#         pwk.sendwhatmsg_to_group_instantly(group_id=os.getenv('WHATSAPP_GROUP_ID'), message=msg,
-#                                            wait_time=10, tab_close=True, close_time=5)
-
-#     except Exception as Error:
-#         print(f'aqui deu ruim {Error}')
+            url = f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
+            print(url)
+            page.goto(url)
+            print(f"abrindo {page.title()}")
+            page.locator("div [title='Mensagem']").fill(msg)
+            page.locator("[aria-label='Enviar']").click()
+            print('Mensagem enviada')
+            page.wait_for_timeout(5000)
+    except Exception as Error:
+        print(f'aqui deu ruim {Error}')
 
 
 if __name__ == '__main__':
