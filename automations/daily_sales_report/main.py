@@ -14,7 +14,7 @@ from appdirs import user_config_dir
 def main():
     file, search_date = download_bling_sales_csv()
     # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = datetime(2022, 10, 4)
+    # search_date = datetime(2022, 10, 1)
     info = make_csv_analysis(file, search_date)
     send_whatsapp_msg(info)
 
@@ -134,19 +134,21 @@ def make_csv_analysis(file, searched_date):
 def send_whatsapp_msg(msg_info):
 
     msg = f"""
-Em {datetime.strftime(msg_info.search_date, '%A')} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos *{msg_info.general_total}* refeições no *TOTAL*
+```
+No(a) {handle_week_text(datetime.strftime(msg_info.search_date, '%A'))} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos {msg_info.general_total} refeições no TOTAL
 
-O *RECEITA* foi de => {locale.currency(msg_info.total_sales, grouping=True)}
+O RECEITA foi de => {locale.currency(msg_info.total_sales, grouping=True)}
 
 Sendo que:   
-ATENDIDAS EM MESA => *{msg_info.in_place_meals}* 
-LEVOU MARMITA => *{msg_info.in_place_delivery}*
-APPS DE DELIVERY => *{msg_info.third_party_delivery}*
+ATENDIDAS EM MESA => {msg_info.in_place_meals} 
+LEVOU MARMITA => {msg_info.in_place_delivery}
+APPS DE DELIVERY => {msg_info.third_party_delivery}
 
 E essa eh a tabela dos 7 produtos com maior valor de venda
 
-{tabulate(msg_info.top_7_sales_df, headers='keys', showindex=False, tablefmt="plain" )}
-    """
+{tabulate(msg_info.top_7_sales_df, headers=['Qtd', 'Total R$', 'Descrição'], showindex=False, tablefmt="fancy_grid" )}
+```
+"""
     print(msg)
 
     chrome_dir = user_config_dir('google-chrome')
@@ -173,6 +175,12 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
     except Exception as Error:
         print(f'aqui deu ruim {Error}')
 
+def handle_week_text(weekday_text):
+
+    if weekday_text in ['segunda', 'terça', 'quarta', 'quinta', 'sexta']:
+        return weekday_text + '-feira'
+    else:
+        return weekday_text
 
 if __name__ == '__main__':
     load_dotenv()
