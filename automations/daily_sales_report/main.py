@@ -26,23 +26,23 @@ def download_bling_sales_csv():
 
     download_folder_path = f"{path.cwd()}/excel"
 
-    sales_date_str = input('Qual data deseja pesquisar?  : ')
+    sales_date_str = input("Qual data deseja pesquisar?  : ")
 
-    print('Iniciando extração dos dados do ERP Bling')
+    print("Iniciando extração dos dados do ERP Bling")
 
-    selected_date = datetime.strptime(sales_date_str, '%d/%m/%Y').date()
+    selected_date = datetime.strptime(sales_date_str, "%d/%m/%Y").date()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=['--start-maximized'])
+        browser = p.chromium.launch(headless=False, args=["--start-maximized"])
         page = browser.new_page(no_viewport=True)
-        page.goto(os.getenv('BLING_LOGIN_URL'))
+        page.goto(os.getenv("BLING_LOGIN_URL"))
         print(f"abrindo {page.title()}")
 
-        page.locator('id=username').fill(os.getenv('BLING_USERNAME'))
-        page.locator('id=senha').fill(os.getenv('BLING_PASSWORD'))
+        page.locator("id=username").fill(os.getenv("BLING_USERNAME"))
+        page.locator("id=senha").fill(os.getenv("BLING_PASSWORD"))
         page.locator("button:has-text('Entrar')").click()
 
-        print('Acesso do Bling realizado')
+        print("Acesso do Bling realizado")
         page.locator("xpath=//*[@id='menu-novo']/ul[1]/li[4]").click()
         page.locator("text=Relatórios >> nth=2").click()
         page.locator("text=Relatório de Vendas").click()
@@ -69,7 +69,7 @@ def download_bling_sales_csv():
 
         download.save_as(file_path)
 
-        print('Arquivo baixado e pronto para processamento dos dados')
+        print("Arquivo baixado e pronto para processamento dos dados")
 
         page.close()
         browser.close()
@@ -78,112 +78,114 @@ def download_bling_sales_csv():
 
 
 def make_csv_analysis(file, searched_date):
-    df = pd.read_csv(file, sep=";",  decimal=',',
-                     thousands='.', encoding="utf_8")
-    df.columns = df.columns.str.replace(' ', '_').str.lower()
+    df = pd.read_csv(file, sep=";", decimal=",", thousands=".", encoding="utf_8")
+    df.columns = df.columns.str.replace(" ", "_").str.lower()
     # print(df.columns)
     df = df.drop(columns=df.columns[1])[:-1]
-    
-    df_by_value = df.sort_values(by=['total_venda'], ascending=False)
-    df = df.sort_values(by=['qtde'], ascending=False)
 
-    total_sales = round(df['total_venda'].sum(), 2)
+    df_by_value = df.sort_values(by=["total_venda"], ascending=False)
+    df = df.sort_values(by=["qtde"], ascending=False)
 
-    top_seven_by_value = df_by_value.head(7)[['produto', 'qtde', 'total_venda']]
+    total_sales = round(df["total_venda"].sum(), 2)
+
+    top_seven_by_value = df_by_value.head(7)[["produto", "qtde", "total_venda"]]
 
     top_seven_by_value = top_seven_by_value.assign(
-        total_venda=top_seven_by_value['total_venda'].astype('float16').map(lambda x: locale.currency(x, grouping=True)),
-        qtde=top_seven_by_value['qtde'].astype('int'),
+        total_venda=top_seven_by_value["total_venda"]
+        .astype("float16")
+        .map(lambda x: locale.currency(x, grouping=True)),
+        qtde=top_seven_by_value["qtde"].astype("int"),
         # produto=top_seven_by_value['produto'].astype('string').str[:15],
-
-        ).reindex(columns=["qtde", "total_venda", "produto"])
+    ).reindex(columns=["qtde", "total_venda", "produto"])
 
     # print(top_seven_by_value)
 
-    produtcs_to_count_as_client = df[df['produto'].str.contains(
-        '*', regex=False)]
+    produtcs_to_count_as_client = df[df["produto"].str.contains("*", regex=False)]
 
-    in_place_delivery = df[df['produto'].str.startswith('(Viagem')]
+    in_place_delivery = df[df["produto"].str.startswith("(Viagem")]
 
     print(in_place_delivery)
 
-    third_party_delivery = df[df['produto'].str.contains(
-        'Delivery', regex=False)]
+    third_party_delivery = df[df["produto"].str.contains("Delivery", regex=False)]
 
-    number_of_clients_in_bling = produtcs_to_count_as_client['qtde'].sum().astype(
-        'int')
+    number_of_clients_in_bling = produtcs_to_count_as_client["qtde"].sum().astype("int")
 
-    number_of_in_place_delivery = in_place_delivery['qtde'].sum().astype(
-        'int')
+    number_of_in_place_delivery = in_place_delivery["qtde"].sum().astype("int")
 
-    number_of_third_party_delivery = third_party_delivery['qtde'].sum().astype(
-        'int')
+    number_of_third_party_delivery = third_party_delivery["qtde"].sum().astype("int")
 
-    number_of_in_place_meals = number_of_clients_in_bling - \
-        number_of_in_place_delivery - number_of_third_party_delivery
+    number_of_in_place_meals = (
+        number_of_clients_in_bling
+        - number_of_in_place_delivery
+        - number_of_third_party_delivery
+    )
 
-    return DailyInfo(number_of_clients_in_bling,
-                     number_of_in_place_meals,
-                     number_of_in_place_delivery,
-                     number_of_third_party_delivery,
-                     top_seven_by_value, total_sales,
-                     searched_date
-                     )
+    return DailyInfo(
+        number_of_clients_in_bling,
+        number_of_in_place_meals,
+        number_of_in_place_delivery,
+        number_of_third_party_delivery,
+        top_seven_by_value,
+        total_sales,
+        searched_date,
+    )
 
 
 def send_whatsapp_msg(msg_info):
 
     msg = f"""
-```
-No(a) {handle_week_text(datetime.strftime(msg_info.search_date, '%A'))} dia {msg_info.search_date.strftime('%d/%m/%Y')} vendemos {msg_info.general_total} refeições no TOTAL
+No(a) *{handle_week_text(datetime.strftime(msg_info.search_date, '%A'))}* dia *{msg_info.search_date.strftime('%d/%m/%Y')}* vendemos *{msg_info.general_total}* refeições no TOTAL
 
-O RECEITA foi de => {locale.currency(msg_info.total_sales, grouping=True)}
+O RECEITA foi de => *{locale.currency(msg_info.total_sales, grouping=True)}*
 
 Sendo que:   
-ATENDIDAS EM MESA => {msg_info.in_place_meals} 
-LEVOU MARMITA => {msg_info.in_place_delivery}
-APPS DE DELIVERY => {msg_info.third_party_delivery}
+ATENDIDAS EM MESA => *{msg_info.in_place_meals}*
+LEVOU MARMITA => *{msg_info.in_place_delivery}*
+APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
 E essa eh a tabela dos 7 produtos com maior valor de venda
 
-{tabulate(msg_info.top_7_sales_df, headers=['Qtd', 'Total R$', 'Descrição'], showindex=False, tablefmt="fancy_grid" )}
-```
+{tabulate(msg_info.top_7_sales_df, headers=['*Qtd*', '*Total R$*', '*Descrição*'], showindex=False, tablefmt="simple", numalign="left" )}
 """
     print(msg)
 
-    chrome_dir = user_config_dir('google-chrome')
-    profile_path = os.path.join(chrome_dir, 'Default')
-    
+    chrome_dir = user_config_dir("google-chrome")
+    profile_path = os.path.join(chrome_dir, "Default")
+
     try:
         with sync_playwright() as p:
             context = p.chromium.launch_persistent_context(
-            user_data_dir=profile_path, 
-            headless=False, 
-            args=['--start-maximized'],
-            no_viewport=True
+                user_data_dir=profile_path,
+                headless=False,
+                args=["--start-maximized"],
+                no_viewport=True,
             )
             page = context.new_page()
 
-            url = f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
+            url = (
+                f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
+            )
             # print(url)
             page.goto(url)
             print(f"abrindo {page.title()}")
             page.locator("div [title='Mensagem']").fill(msg)
             page.locator("[aria-label='Enviar']").click()
-            print('Sucesso!! Mensagem enviada')
+            print("Sucesso!! Mensagem enviada")
             page.wait_for_timeout(5000)
     except Exception as Error:
-        print(f'aqui deu ruim {Error}')
+        print(f"aqui deu ruim {Error}")
+
 
 def handle_week_text(weekday_text):
 
-    if weekday_text in ['segunda', 'terça', 'quarta', 'quinta', 'sexta']:
-        return weekday_text + '-feira'
+    if weekday_text in ["segunda", "terça", "quarta", "quinta", "sexta"]:
+        return weekday_text + "-feira"
     else:
         return weekday_text
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     load_dotenv()
     # setar locale para português
-    locale.setlocale(locale.LC_ALL, 'pt_BR.utf8')
+    locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
     main()
