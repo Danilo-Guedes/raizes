@@ -104,7 +104,7 @@ def make_csv_analysis(file, searched_date):
 
     in_place_delivery = df[df["produto"].str.startswith("(Viagem")]
 
-    print(in_place_delivery)
+    # print(in_place_delivery)
 
     third_party_delivery = df[
         df["produto"].str.contains("Delivery", regex=False)
