@@ -12,9 +12,9 @@ from appdirs import user_config_dir
 
 
 def main():
-    file, search_date = download_bling_sales_csv()
-    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = datetime(2022, 10, 1)
+    # file, search_date = download_bling_sales_csv()
+    file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
+    search_date = datetime(2022, 10, 21)
     info = make_csv_analysis(file, search_date)
     send_whatsapp_msg(info)
 
@@ -106,7 +106,10 @@ def make_csv_analysis(file, searched_date):
 
     print(in_place_delivery)
 
-    third_party_delivery = df[df["produto"].str.contains("Delivery", regex=False)]
+    third_party_delivery = df[
+        df["produto"].str.contains("Delivery", regex=False)
+        & df["produto"].str.contains("*", regex=False)
+    ]
 
     number_of_clients_in_bling = produtcs_to_count_as_client["qtde"].sum().astype("int")
 
@@ -149,31 +152,31 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
 """
     print(msg)
 
-    chrome_dir = user_config_dir("google-chrome")
-    profile_path = os.path.join(chrome_dir, "Default")
+    # chrome_dir = user_config_dir("google-chrome")
+    # profile_path = os.path.join(chrome_dir, "Default")
 
-    try:
-        with sync_playwright() as p:
-            context = p.chromium.launch_persistent_context(
-                user_data_dir=profile_path,
-                headless=False,
-                args=["--start-maximized"],
-                no_viewport=True,
-            )
-            page = context.new_page()
+    # try:
+    #     with sync_playwright() as p:
+    #         context = p.chromium.launch_persistent_context(
+    #             user_data_dir=profile_path,
+    #             headless=False,
+    #             args=["--start-maximized"],
+    #             no_viewport=True,
+    #         )
+    #         page = context.new_page()
 
-            url = (
-                f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
-            )
-            # print(url)
-            page.goto(url)
-            print(f"abrindo {page.title()}")
-            page.locator("div [title='Mensagem']").fill(msg)
-            page.locator("[aria-label='Enviar']").click()
-            print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(5000)
-    except Exception as Error:
-        print(f"aqui deu ruim {Error}")
+    #         url = (
+    #             f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
+    #         )
+    #         # print(url)
+    #         page.goto(url)
+    #         print(f"abrindo {page.title()}")
+    #         page.locator("div [title='Mensagem']").fill(msg)
+    #         page.locator("[aria-label='Enviar']").click()
+    #         print("Sucesso!! Mensagem enviada")
+    #         page.wait_for_timeout(5000)
+    # except Exception as Error:
+    #     print(f"aqui deu ruim {Error}")
 
 
 def handle_week_text(weekday_text):
