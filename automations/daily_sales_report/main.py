@@ -174,7 +174,8 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
             page.locator("div [title='Mensagem']").fill(msg)
             page.locator("[aria-label='Enviar']").click()
             print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(1000)
+            page.close()
     except Exception as Error:
         print(f"aqui deu ruim {Error}")
 
