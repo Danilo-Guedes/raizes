@@ -30,20 +30,6 @@ def load_data():
         tipo=df["tipo"].astype("string").str.replace("C", "crédito", regex=False),
     )
 
-    print(df.head())
-
-    print(df["data"][0])
-    print(type(df["data"][0]))
-    print(df["valor"][0])
-    print("#" * 50)
-    print(df["valor"][0] + df["valor"][1])
-
-    print("#" * 50)
-    print(df.head()["tipo"])
-    print(df.dtypes)
-    print("#" * 50)
-    print(df.tail()["tipo"])
-
     return df, df.columns
 
 
@@ -51,6 +37,4 @@ data, columns = load_data()
 
 # print(data.head(50))
 
-st.write("Bem vindo ao Data-App de fechamento do Ra!zes")
-st.write(data)
-st.write(columns)
+st.write("Essa é a pagina de Análise Financeira")
