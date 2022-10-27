@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 
 
-# @st.cache
+@st.cache
 def load_data():
     df = pd.read_csv("data.csv", sep=";", thousands=".", decimal=",", encoding="utf_8")
 
@@ -38,3 +38,6 @@ data, columns = load_data()
 # print(data.head(50))
 
 st.write("Essa é a pagina de Análise Financeira")
+
+st.dataframe(data)
+st.bar_chart(data=data, y="valor")
