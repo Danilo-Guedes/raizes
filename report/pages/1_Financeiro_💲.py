@@ -57,21 +57,20 @@ def load_data():
     )
     ## end-main df cleanup and enhancements
 
-    print(type(df["data"][0]))
+    # print(type(df["data"][0]))
 
     ## remove ! symbols
     df = df[df["categoria"].str.contains("!", regex=False, na=True) == False]
 
     ## extract totals and relevant data
 
-    total_income = pd.pivot_table(data=df, columns="tipo", aggfunc=sum)  ##MUDAAAAAAR
-    print("#" * 50)
-    print(type(total_income))
-    print(total_income)
-    return df, total_income
+    total_income = df.loc[df["tipo"] == "receita", "valor"].sum()
+    total_expenses = df.loc[df["tipo"] == "despesa", "valor"].sum()
+
+    return df, total_income, total_expenses
 
 
-data, total_income = load_data()
+data, tt_income, tt_expenses = load_data()
 
 # print(data.head(50))
 
@@ -85,8 +84,19 @@ with st.expander("A cara dos dados:"):
     st.write("(Linha,Colunas)", data.shape)
     st.dataframe(data)
 
-st.write(
-    f"O Total de Receitas do período foi de {locale.currency(total_income['receita'][-1], grouping=True)}"
-)  ##MUDDAAARRR
+_, col2, _ = st.columns((2, 6, 1))
+
+col2.markdown(
+    f"""O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(tt_income, grouping=True)}</b>""",
+    unsafe_allow_html=True,
+)
+col2.markdown(
+    f"""O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(tt_expenses, grouping=True)}</b>""",
+    unsafe_allow_html=True,
+)
+col2.markdown(
+    f"""O Resultado Bruto (rec - des) foi de <b>{locale.currency(tt_income - tt_expenses, grouping=True)}</b>.""",
+    unsafe_allow_html=True,
+)
 
 st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
