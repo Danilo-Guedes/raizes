@@ -1,9 +1,13 @@
 import pandas as pd
 import streamlit as st
 
-_, col2, _ = st.columns([3, 5, 5])
-col2.image("./images/logotipo_raizes.png", width=250)
-st.markdown(
+st.set_page_config(layout="wide")
+
+_, first_line_col2, _ = st.columns((1, 1, 1))
+
+_, second_line_col2, _ = st.columns((1, 5, 1))
+first_line_col2.image("./images/logotipo_raizes.png", width=300)
+second_line_col2.markdown(
     """
     
     ## Olá :grinning: seja bem vindo(a) ao Data-App de análises do <span style='color:green;'>Ra!zes</span>

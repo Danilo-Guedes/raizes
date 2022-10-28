@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 import locale
 import calendar
+import altair as alt
 
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
@@ -50,7 +51,7 @@ def load_data():
     # print(df.dtypes)
 
     df.assign(
-        valor=df["valor"].astype("float16"),
+        valor=df["valor"].round(2).astype("float16"),
         tipo=df["tipo"].astype("category"),
         fornecedor=df["fornecedor"].astype("category"),
         categoria=df["categoria"].astype("category"),
@@ -84,7 +85,7 @@ with st.expander("A cara dos dados:"):
     st.write("(Linha,Colunas)", data.shape)
     st.dataframe(data)
 
-_, col2, _ = st.columns((2, 6, 1))
+_, col2, _ = st.columns((2.5, 6, 1))
 
 col2.markdown(
     f"""O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(tt_income, grouping=True)}</b>""",
@@ -99,4 +100,13 @@ col2.markdown(
     unsafe_allow_html=True,
 )
 
-st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
+# st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
+
+top10_expenses = (
+    alt.Chart(data.loc[data["tipo"] == "despesa"])
+    .mark_bar()
+    .encode(alt.X("sum(valor)"), alt.Y("categoria"))
+    .properties(width=1400, height=600)
+)
+
+st.altair_chart(top10_expenses)
