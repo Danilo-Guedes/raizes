@@ -10,12 +10,12 @@ locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
 
 @st.cache
-def load_data():
+def load_data(file):
 
     ## main df
 
     df = pd.read_csv(
-        "data.csv",
+        file,
         sep=";",
         thousands=".",
         decimal=",",
@@ -71,9 +71,11 @@ def load_data():
     return df, total_income, total_expenses
 
 
-data, tt_income, tt_expenses = load_data()
+# data, tt_income, tt_expenses = load_data()
 
 # print(data.head(50))
+
+st.set_page_config(layout="wide")
 
 st.markdown(
     """
@@ -81,32 +83,42 @@ st.markdown(
 )
 # data.dtypes
 
-with st.expander("A cara dos dados:"):
-    st.write("(Linha,Colunas)", data.shape)
-    st.dataframe(data)
-
-_, col2, _ = st.columns((2.5, 6, 1))
-
-col2.markdown(
-    f"""O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(tt_income, grouping=True)}</b>""",
-    unsafe_allow_html=True,
-)
-col2.markdown(
-    f"""O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(tt_expenses, grouping=True)}</b>""",
-    unsafe_allow_html=True,
-)
-col2.markdown(
-    f"""O Resultado Bruto (rec - des) foi de <b>{locale.currency(tt_income - tt_expenses, grouping=True)}</b>.""",
-    unsafe_allow_html=True,
+uploaded_file = st.file_uploader(
+    label="IMPORTE O EXTRATO NO BLING NO FORMATO CSV",
+    key="uploader",
+    type=["csv"],
+    help="para de ser burro, não tem segredo fazer um upload",
 )
 
-# st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
+if uploaded_file is not None:
+    data, tt_income, tt_expenses = load_data(uploaded_file)
 
-top10_expenses = (
-    alt.Chart(data.loc[data["tipo"] == "despesa"])
-    .mark_bar()
-    .encode(alt.X("sum(valor)"), alt.Y("categoria"))
-    .properties(width=1400, height=600)
-)
+    with st.expander("A cara dos dados:"):
+        st.write("(Linha,Colunas)", data.shape)
+        st.dataframe(data)
 
-st.altair_chart(top10_expenses)
+    _, col2, _ = st.columns((2.5, 6, 1))
+
+    col2.markdown(
+        f"""O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(tt_income, grouping=True)}</b>""",
+        unsafe_allow_html=True,
+    )
+    col2.markdown(
+        f"""O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(tt_expenses, grouping=True)}</b>""",
+        unsafe_allow_html=True,
+    )
+    col2.markdown(
+        f"""O Resultado Bruto (rec - des) foi de <b>{locale.currency(tt_income - tt_expenses, grouping=True)}</b>.""",
+        unsafe_allow_html=True,
+    )
+
+    # st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
+
+    top10_expenses = (
+        alt.Chart(data.loc[data["tipo"] == "despesa"])
+        .mark_bar()
+        .encode(alt.X("sum(valor)"), alt.Y("categoria"))
+        .properties(width=1400, height=600)
+    )
+
+    st.altair_chart(top10_expenses)
