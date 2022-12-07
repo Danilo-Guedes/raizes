@@ -44,10 +44,11 @@ def load_data(file):
     df["dia"] = df["data"].dt.day
     df["mês"] = df["data"].dt.month
     df["ano"] = df["data"].dt.year
-    df["dia_semana"] = df["data"].dt.day_name()
+    df["dia_semana"] = df["data"].dt.day_name(locale.getlocale())
 
     df["data"] = df["data"].dt.date
 
+    # print(df.columns)
     # print(df.dtypes)
 
     df.assign(
@@ -56,19 +57,52 @@ def load_data(file):
         fornecedor=df["fornecedor"].astype("category"),
         categoria=df["categoria"].astype("category"),
     )
-    ## end-main df cleanup and enhancements
 
-    # print(type(df["data"][0]))
+    ## end-main df cleanup and enhancements
 
     ## remove ! symbols
     df = df[df["categoria"].str.contains("!", regex=False, na=True) == False]
 
     ## extract totals and relevant data
 
-    total_income = df.loc[df["tipo"] == "receita", "valor"].sum()
-    total_expenses = df.loc[df["tipo"] == "despesa", "valor"].sum()
+    income_df = df.loc[df["tipo"] == "receita"]
+    expenses_df = df.loc[df["tipo"] == "despesa"]
 
-    return df, total_income, total_expenses
+    # print(expenses_df)
+
+    ## GROUPBY
+    income_by_category_df = (
+        income_df.groupby("categoria", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+    )
+    expenses_by_category_df = (
+        expenses_df.groupby(by="categoria", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+    )
+
+    # print(income_by_category_df)
+    # print(expenses_by_category_df)
+    # print(expenses_by_category_df)
+
+    return df, income_df, expenses_df, income_by_category_df, expenses_by_category_df
 
 
 # data, tt_income, tt_expenses = load_data()
@@ -79,7 +113,7 @@ st.set_page_config(layout="wide")
 
 st.markdown(
     """
- ## Análise Financeira"""
+ # Análise Financeira"""
 )
 # data.dtypes
 
@@ -91,34 +125,39 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    data, tt_income, tt_expenses = load_data(uploaded_file)
+    (
+        data,
+        income_df,
+        expenses_df,
+        income_by_category_df,
+        expenses_by_category_df,
+    ) = load_data(uploaded_file)
 
     with st.expander("A cara dos dados:"):
         st.write("(Linha,Colunas)", data.shape)
         st.dataframe(data)
 
-    _, col2, _ = st.columns((2.5, 6, 1))
-
-    col2.markdown(
-        f"""O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(tt_income, grouping=True)}</b>""",
-        unsafe_allow_html=True,
-    )
-    col2.markdown(
-        f"""O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(tt_expenses, grouping=True)}</b>""",
-        unsafe_allow_html=True,
-    )
-    col2.markdown(
-        f"""O Resultado Bruto (rec - des) foi de <b>{locale.currency(tt_income - tt_expenses, grouping=True)}</b>.""",
+    st.markdown(
+        f""" ## O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(income_df['valor'].sum(), grouping=True)}</b>""",
         unsafe_allow_html=True,
     )
 
-    # st.bar_chart(data=data.sort_values(by=["data"], ascending=False), y="valor", x="data")
+    st.markdown(
+        f""" ## O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(expenses_df['valor'].sum(), grouping=True)}</b>""",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f""" ### O Resultado Bruto (rec - des) foi de <b>{locale.currency(income_df['valor'].sum() - expenses_df['valor'].sum(), grouping=True)}</b>.""",
+        unsafe_allow_html=True,
+    )
+
+    st.header("Top 10 despesas por valor R$")
 
     top10_expenses = (
-        alt.Chart(data.loc[data["tipo"] == "despesa"])
+        alt.Chart(expenses_by_category_df.nlargest(10, "valor"))
         .mark_bar()
-        .encode(alt.X("sum(valor)"), alt.Y("categoria"))
-        .properties(width=1400, height=600)
+        .encode(alt.X("categoria", sort="-y"), alt.Y("valor"))
+        .properties(width=1400, height=500)
     )
 
     st.altair_chart(top10_expenses)
