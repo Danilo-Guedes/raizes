@@ -4,6 +4,7 @@ import streamlit as st
 import locale
 import calendar
 import altair as alt
+import numpy as np
 
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
@@ -102,7 +103,22 @@ def load_data(file):
     # print(expenses_by_category_df)
     # print(expenses_by_category_df)
 
-    return df, income_df, expenses_df, income_by_category_df, expenses_by_category_df
+    ## TOPS DFS
+
+    top10_exp_df = (
+        expenses_by_category_df.nlargest(10, "valor")
+        .sort_values(by="valor", ascending=False)
+        .assign(position=range(10))
+    )
+
+    return (
+        df,
+        income_df,
+        expenses_df,
+        income_by_category_df,
+        expenses_by_category_df,
+        top10_exp_df,
+    )
 
 
 # data, tt_income, tt_expenses = load_data()
@@ -113,7 +129,7 @@ st.set_page_config(layout="wide")
 
 st.markdown(
     """
- # Análise Financeira"""
+ ### Análise Financeira"""
 )
 # data.dtypes
 
@@ -131,33 +147,53 @@ if uploaded_file is not None:
         expenses_df,
         income_by_category_df,
         expenses_by_category_df,
+        top10_exp_df,
     ) = load_data(uploaded_file)
+
+    st.balloons()
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     with st.expander("A cara dos dados:"):
         st.write("(Linha,Colunas)", data.shape)
         st.dataframe(data)
 
     st.markdown(
-        f""" ## O Total de Receitas do período foi de <b style='color:green;'>{locale.currency(income_df['valor'].sum(), grouping=True)}</b>""",
+        f""" #### <br> O total de <b style='color:#a7c52b'>Receitas</b> do período foi de <b style='color:#a7c52b;'>{locale.currency(income_df['valor'].sum(), grouping=True)}</b>""",
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        f""" ## O Total de Despesas do período foi de <b style='color:red;'>{locale.currency(expenses_df['valor'].sum(), grouping=True)}</b>""",
+        f""" #### O total de <b style='color:#f19904'>Despesas</b> do período foi de <b style='color:#f19904'>{locale.currency(expenses_df['valor'].sum(), grouping=True)}</b>""",
         unsafe_allow_html=True,
     )
     st.markdown(
-        f""" ### O Resultado Bruto (rec - des) foi de <b>{locale.currency(income_df['valor'].sum() - expenses_df['valor'].sum(), grouping=True)}</b>.""",
+        f""" ##### O resultado bruto (rec - des) foi de <b style='color:#003400;font-size:26px;text-decoration:underline;'>{locale.currency(income_df['valor'].sum() - expenses_df['valor'].sum(), grouping=True)}</b>.<br>""",
         unsafe_allow_html=True,
     )
 
-    st.header("Top 10 despesas por valor R$")
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por valor<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
 
     top10_expenses = (
-        alt.Chart(expenses_by_category_df.nlargest(10, "valor"))
+        alt.Chart(top10_exp_df)
         .mark_bar()
-        .encode(alt.X("categoria", sort="-y"), alt.Y("valor"))
+        .encode(
+            alt.Y("categoria:O", sort="-x", axis=alt.Axis(title="")),
+            alt.X("valor:Q", axis=alt.Axis(title="R$ Valor", format="$,.0f")),
+            color=alt.condition(
+                alt.datum.position < 3,
+                alt.value("#f19904"),
+                alt.value("lightgray"),  ## higlight only top 3 expenses
+            ),
+        )
         .properties(width=1400, height=500)
+        .configure_axis(labelFontSize=16, titleFontSize=20, titleColor="#f19904")
     )
 
     st.altair_chart(top10_expenses)

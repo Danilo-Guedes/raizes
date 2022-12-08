@@ -10,7 +10,7 @@ first_line_col2.image("./images/logotipo_raizes.png", width=300)
 second_line_col2.markdown(
     """
     
-    ## Olá :grinning: seja bem vindo(a) ao Data-App de análises do <span style='color:green;'>Ra!zes</span>
+    ## Olá :grinning: seja bem vindo(a) ao Data-App de análises do <span style='color:#a7c52b;'>Ra!zes</span>
 
     > **Qual o objetivo do Data-App ?**
 
