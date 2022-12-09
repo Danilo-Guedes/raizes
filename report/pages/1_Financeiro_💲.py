@@ -175,7 +175,7 @@ if uploaded_file is not None:
     st.markdown("***")
 
     st.markdown(
-        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por categoria<br><br>
+        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por categoria + (%) <br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -184,8 +184,17 @@ if uploaded_file is not None:
         alt.Chart(top10_exp_df)
         .mark_bar()
         .encode(
-            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
-            alt.X("valor:Q", axis=alt.Axis(title="R$ Valor", format="$,.0f")),
+            alt.Y(
+                "categoria:N",
+                sort=alt.EncodingSortField("value", op="max", order="descending"),
+                axis=alt.Axis(title=""),
+            ),
+            alt.X(
+                "valor:Q",
+                axis=alt.Axis(
+                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                ),
+            ),
             color=alt.condition(
                 alt.datum.position < 3,
                 alt.value("#f19904"),
@@ -193,10 +202,23 @@ if uploaded_file is not None:
             ),
         )
         .properties(width=1400, height=500)
-        .configure_axis(labelFontSize=16, titleFontSize=20, titleColor="#f19904")
     )
 
-    st.altair_chart(top10_expenses)
+    label_top10_expenses = (
+        top10_expenses.mark_text(
+            align="left",
+            baseline="middle",
+            dx=15,  # Nudges text to right so it doesn't appear on top of the bar
+        )
+        .encode(text=alt.Text("percentage:Q", format=".2%"))
+        .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
+    )
+
+    st.altair_chart(
+        (top10_expenses + label_top10_expenses).configure_axis(
+            labelFontSize=16, titleFontSize=20, titleColor="#f19904", grid=False
+        )
+    )
 
     st.markdown("***")
 
@@ -213,7 +235,9 @@ if uploaded_file is not None:
             alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
             alt.X(
                 "valor:Q",
-                axis=alt.Axis(title="R$ Valor", format="$,.3s"),
+                axis=alt.Axis(
+                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                ),
             ),
             color=alt.condition(
                 alt.datum.position == 0,
@@ -221,8 +245,10 @@ if uploaded_file is not None:
                 alt.value("lightgray"),  ## higlight only top 3 expenses
             ),
         )
-        .properties(width=1400, height=300)
-        .configure_axis(labelFontSize=16, titleFontSize=20, titleColor="#a7c52b")
+        .properties(width=1400, height=350)
+        .configure_axis(
+            labelFontSize=16, titleFontSize=20, titleColor="#a7c52b", grid=False
+        )
     )
 
     st.markdown("***")
