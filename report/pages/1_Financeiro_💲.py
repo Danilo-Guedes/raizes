@@ -69,8 +69,6 @@ def load_data(file):
     income_df = df.loc[df["tipo"] == "receita"]
     expenses_df = df.loc[df["tipo"] == "despesa"]
 
-    # print(expenses_df)
-
     ## GROUPBY
     income_by_category_df = (
         income_df.groupby("categoria", as_index=False)
@@ -85,6 +83,13 @@ def load_data(file):
             axis="columns",
         )
     )
+
+    income_by_category_df = income_by_category_df.sort_values(
+        by="valor", ascending=False
+    ).assign(
+        position=range(len(income_by_category_df))
+    )  ##adding position foir conditional render color, ...
+
     expenses_by_category_df = (
         expenses_df.groupby(by="categoria", as_index=False)
         .sum(numeric_only=True)
@@ -98,10 +103,6 @@ def load_data(file):
             axis="columns",
         )
     )
-
-    # print(income_by_category_df)
-    # print(expenses_by_category_df)
-    # print(expenses_by_category_df)
 
     ## TOPS DFS
 
@@ -123,7 +124,6 @@ def load_data(file):
 
 # data, tt_income, tt_expenses = load_data()
 
-# print(data.head(50))
 
 st.set_page_config(layout="wide")
 
@@ -175,7 +175,7 @@ if uploaded_file is not None:
     st.markdown("***")
 
     st.markdown(
-        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por valor<br><br>
+        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por categoria<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -184,7 +184,7 @@ if uploaded_file is not None:
         alt.Chart(top10_exp_df)
         .mark_bar()
         .encode(
-            alt.Y("categoria:O", sort="-x", axis=alt.Axis(title="")),
+            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
             alt.X("valor:Q", axis=alt.Axis(title="R$ Valor", format="$,.0f")),
             color=alt.condition(
                 alt.datum.position < 3,
@@ -197,3 +197,32 @@ if uploaded_file is not None:
     )
 
     st.altair_chart(top10_expenses)
+
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### <b style='color:#a7c52b'>Receitas</b> por categoria<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.altair_chart(
+        alt.Chart(income_by_category_df)
+        .mark_bar()
+        .encode(
+            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
+            alt.X(
+                "valor:Q",
+                axis=alt.Axis(title="R$ Valor", format="$,.3s"),
+            ),
+            color=alt.condition(
+                alt.datum.position == 0,
+                alt.value("#a7c52b"),
+                alt.value("lightgray"),  ## higlight only top 3 expenses
+            ),
+        )
+        .properties(width=1400, height=300)
+        .configure_axis(labelFontSize=16, titleFontSize=20, titleColor="#a7c52b")
+    )
+
+    st.markdown("***")
