@@ -15,7 +15,7 @@ second_line_col2.markdown(
 
     - Ter uma visão da performance <b style='color:#003400;font-size:18px'>Financeira</b> do Restaurante :moneybag: .
     - Também olhar para os detalhes e _insights_ sob a ótica de <b style='color:#003400;font-size:18px'>Vendas</b> :credit_card:.
-    - Pode Análisar os dados de <b style='color:#003400;font-size:18px'>Delivery</b> :motor_scooter:.
+    - Poder Análisar os dados de <b style='color:#003400;font-size:18px'>Delivery</b> :motor_scooter:.
     - Talvez analisar o perfil de consumidor pelo serviço da Stone? :zombie:
     """,
     unsafe_allow_html=True,

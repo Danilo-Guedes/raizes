@@ -2,7 +2,6 @@ from time import timezone
 import pandas as pd
 import streamlit as st
 import locale
-import calendar
 import altair as alt
 import numpy as np
 
