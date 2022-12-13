@@ -66,7 +66,16 @@ def load_data(file):
     ## extract totals and relevant data
 
     income_df = df.loc[df["tipo"] == "receita"]
+
+    income_df["percentage"] = income_df["valor"].apply(
+        lambda x: x / income_df["valor"].sum()
+    )
+
     expenses_df = df.loc[df["tipo"] == "despesa"]
+
+    expenses_df["percentage"] = expenses_df["valor"].apply(
+        lambda x: x / expenses_df["valor"].sum()
+    )
 
     ## GROUPBY
     income_by_category_df = (
@@ -203,20 +212,23 @@ if uploaded_file is not None:
         .properties(width=1400, height=500)
     )
 
-    label_top10_expenses = (
-        top10_expenses.mark_text(
-            align="left",
-            baseline="middle",
-            dx=15,  # Nudges text to right so it doesn't appear on top of the bar
+    label_top10_expenses = top10_expenses.mark_text(
+        align="left",
+        baseline="middle",
+        dx=10,  # Nudges text to right so it doesn't appear on top of the bar
+    ).encode(
+        text=alt.Text(
+            "percentage:N",
+            format=".2%",
         )
-        .encode(text=alt.Text("percentage:Q", format=".2%"))
-        .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
     )
 
     st.altair_chart(
-        (top10_expenses + label_top10_expenses).configure_axis(
+        (top10_expenses + label_top10_expenses)
+        .configure_axis(
             labelFontSize=16, titleFontSize=20, titleColor="#f19904", grid=False
         )
+        .configure_text(fontSize=18)
     )
 
     st.markdown("***")
@@ -227,16 +239,24 @@ if uploaded_file is not None:
         unsafe_allow_html=True,
     )
 
-    st.altair_chart(
+    incomes_chart = (
         alt.Chart(income_by_category_df)
         .mark_bar()
         .encode(
-            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
+            alt.Y(
+                "categoria:N",
+                sort=alt.EncodingSortField("value", op="max", order="descending"),
+                axis=alt.Axis(title=""),
+            ),
             alt.X(
                 "valor:Q",
                 axis=alt.Axis(
-                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                    title="R$ Valor",
+                    titlePadding=15,
+                    format="$,.2f",
+                    tickMinStep=5000,
                 ),
+                scale=alt.Scale(rangeMax=1150),  ## to avoid cut text at right
             ),
             color=alt.condition(
                 alt.datum.position == 0,
@@ -245,9 +265,25 @@ if uploaded_file is not None:
             ),
         )
         .properties(width=1400, height=350)
+    )
+
+    labe_incomes_chart = incomes_chart.mark_text(
+        align="left",
+        baseline="middle",
+        dx=10,  # Nudges text to right so it doesn't appear on top of the bar
+    ).encode(
+        text=alt.Text(
+            "percentage:N",
+            format=".2%",
+        )
+    )
+
+    st.altair_chart(
+        (incomes_chart + labe_incomes_chart)
         .configure_axis(
             labelFontSize=16, titleFontSize=20, titleColor="#a7c52b", grid=False
         )
+        .configure_text(fontSize=18)
     )
 
     st.markdown("***")
