@@ -146,7 +146,7 @@ ATENDIDAS EM MESA => *{msg_info.in_place_meals}*
 LEVOU MARMITA => *{msg_info.in_place_delivery}*
 APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
-E essa eh a tabela dos 7 produtos com maior valor de venda
+E essa é a tabela dos 7 produtos com maior valor de venda
 
 {tabulate(msg_info.top_7_sales_df, headers=['*Qtd*', '*Total R$*', '*Descrição*'], showindex=False, tablefmt="simple", numalign="left" )}
 """
@@ -169,8 +169,9 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
                 f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
             )
             # print(url)
-            page.goto(url)
             print(f"abrindo {page.title()}")
+            page.goto(url, wait_until="domcontentloaded")
+            print("WhatsappWeb Acessado com Sucesso!")
             page.locator("div [title='Mensagem']").fill(msg)
             page.locator("[aria-label='Enviar']").click()
             print("Sucesso!! Mensagem enviada")
