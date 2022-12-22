@@ -163,6 +163,7 @@ E essa é a tabela dos 7 produtos com maior valor de venda
                 args=["--start-maximized"],
                 no_viewport=True,
             )
+
             page = context.new_page()
 
             url = (
@@ -172,11 +173,14 @@ E essa é a tabela dos 7 produtos com maior valor de venda
             print(f"abrindo {page.title()}")
             page.goto(url, wait_until="domcontentloaded")
             print("WhatsappWeb Acessado com Sucesso!")
-            page.locator("div [title='Mensagem']").fill(msg)
-            page.locator("[aria-label='Enviar']").click()
+            msg_input = page.locator("div [title='Mensagem']")
+            msg_input.fill(msg)
+            send_btn = page.locator("[aria-label='Enviar']")
+            send_btn.click()
             print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(2500)
             page.close()
+
     except Exception as Error:
         print(f"aqui deu ruim {Error}")
 
