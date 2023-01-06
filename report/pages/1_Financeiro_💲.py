@@ -124,7 +124,7 @@ def load_data(file):
 # data, tt_income, tt_expenses = load_data()
 
 
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 st.markdown(
     """

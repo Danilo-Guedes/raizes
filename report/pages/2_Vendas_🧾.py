@@ -49,63 +49,64 @@ def load_data(file):
     )
 
     df["dia"] = df["data"].dt.day
-    df["mês"] = df["data"].dt.month
+    df["mes"] = df["data"].dt.month
     df["ano"] = df["data"].dt.year
     df["dia_semana"] = df["data"].dt.day_name(locale.getlocale())
 
     df["data"] = df["data"].dt.date
 
-    # # print(df.columns)
-    # # print(df.dtypes)
-
     df["quantidade"] = df["quantidade"].astype(int)
-
-    # df.assign(
-    #     valor=df["valor"].round(2).astype("float16"),
-    #     fornecedor=df["fornecedor"].astype("category"),
-    #     categoria=df["categoria"].astype("category"),
-    # )
 
     # ## end-main df cleanup and enhancements
 
     # ## extract totals and relevant data
 
-    total_sales_sum = df["valor_total"].sum()
+    total_sales_sum = df["valor_total"].sum(numeric_only=True)
+
+    only_meals = (
+        df[df["descricao"].str.contains("*", regex=False, na=True)].drop(
+            labels=[
+                "mes",
+                "dia",
+                "ano",
+                "dia_semana",
+            ],
+            axis="columns",
+        )
+        # .sum()
+    )
+
+    delivery_totals = only_meals[
+        only_meals["descricao"].str.contains("Delivery", regex=False)
+    ].sum(numeric_only=True)
+
+    in_place_delivery = only_meals[
+        only_meals["descricao"].str.startswith("(Viagem")
+    ].sum(numeric_only=True)
+
+    in_place_meals = only_meals[
+        ~(
+            only_meals["descricao"].str.contains("Delivery")
+            | only_meals["descricao"].str.startswith("(Viagem")
+        )
+    ].sum(numeric_only=True)
+
+    only_meals_totals = only_meals.drop(
+        labels=[
+            "descricao",
+        ],
+        axis="columns",
+    ).sum(numeric_only=True)
 
     # ## GROUPBY
-    # income_by_category_df = (
-    #     income_df.groupby("categoria", as_index=False)
-    #     .sum(numeric_only=True)
-    #     .drop(
-    #         labels=[
-    #             "id",
-    #             "dia",
-    #             "mês",
-    #             "ano",
-    #         ],
-    #         axis="columns",
-    #     )
-    # )
 
-    # income_by_category_df = income_by_category_df.sort_values(
-    #     by="valor", ascending=False
-    # ).assign(
-    #     position=range(len(income_by_category_df))
-    # )  ##adding position foir conditional render color, ...
+    sales_by_item = (
+        df.groupby("descricao", as_index=False)
+        .sum(numeric_only=True)
+        .drop(labels=["mes", "dia", "ano"], axis="columns")
+    )
 
-    # expenses_by_category_df = (
-    #     expenses_df.groupby(by="categoria", as_index=False)
-    #     .sum(numeric_only=True)
-    #     .drop(
-    #         labels=[
-    #             "id",
-    #             "dia",
-    #             "mês",
-    #             "ano",
-    #         ],
-    #         axis="columns",
-    #     )
-    # )
+    top_20_sales_items_by_value = sales_by_item.nlargest(20, "valor_total")
 
     # ## TOPS DFS
 
@@ -115,19 +116,35 @@ def load_data(file):
     #     .assign(position=range(10))
     # )
 
-    print(df.head())
-    print(total_sales_sum)
+    # print(df.head())
+    # print(total_sales_sum)
+    # print(sales_by_item)
+    # print("#" * 99)
+    # print(top_20_sales_items_by_value)
+    # print("#" * 99)
+    # print(only_meals)
+    # print(only_meals_totals)
+    # print(delivery_totals)
+    # print(in_place_delivery)
+    # print(in_place_meals)
     # print(df)
     # print(df.columns)
     # print(df.info())
 
-    return (df, total_sales_sum)
+    return (
+        df,
+        total_sales_sum,
+        sales_by_item,
+        top_20_sales_items_by_value,
+        only_meals,
+        only_meals_totals,
+        in_place_meals,
+        delivery_totals,
+        in_place_delivery,
+    )
 
 
-# data, tt_income, tt_expenses = load_data()
-
-
-# st.set_page_config(layout="wide")
+st.set_page_config(layout="wide")
 
 st.markdown(
     """
@@ -143,7 +160,17 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
-    (data, total_sales_sum) = load_data(uploaded_file)
+    (
+        data,
+        total_sales_sum,
+        sales_by_item,
+        top_20_sales_items_by_value,
+        only_meals,
+        only_meals_totals,
+        in_place_meals,
+        delivery_totals,
+        in_place_delivery,
+    ) = load_data(uploaded_file)
 
     st.balloons()
 
@@ -152,3 +179,30 @@ if uploaded_file is not None:
     with st.expander("A cara dos dados:"):
         st.write("(Linha,Colunas)", data.shape)
         st.dataframe(data)
+
+    st.markdown(
+        f""" ### <br> As <b style='color:#a7c52b'>Vendas</b> totais do período foi de <b style='color:#a7c52b;'>{locale.currency(total_sales_sum, grouping=True)}</b>""",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f""" #### <br> Sendo <b style='color:#a7c52b'>{locale.format_string('%.0f', only_meals_totals.loc['quantidade'], grouping=True, monetary=False)}</b> refeições no total<br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f""" ##### - <b style='color:#a7c52b'>{int(in_place_meals['quantidade'])}</b> foram nos deliveries (plataformas)<br>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', delivery_totals.loc['quantidade'], grouping=True, monetary=False)}</b> foram nos deliveries (plataformas)<br>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', in_place_delivery.loc['quantidade'], grouping=True, monetary=False)}</b> foram refeições viagem no local<br>
+        """,
+        unsafe_allow_html=True,
+    )
