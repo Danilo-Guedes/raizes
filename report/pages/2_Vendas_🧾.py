@@ -106,7 +106,11 @@ def load_data(file):
         .drop(labels=["mes", "dia", "ano"], axis="columns")
     )
 
-    top_20_sales_items_by_value = sales_by_item.nlargest(20, "valor_total")
+    top_15_sales_items_by_value = sales_by_item.nlargest(15, "valor_total")
+
+    top_15_sales_items_by_value["position"] = range(
+        1, len(top_15_sales_items_by_value) + 1
+    )
 
     # ## TOPS DFS
 
@@ -120,7 +124,7 @@ def load_data(file):
     # print(total_sales_sum)
     # print(sales_by_item)
     # print("#" * 99)
-    # print(top_20_sales_items_by_value)
+    # print(top_15_sales_items_by_value)
     # print("#" * 99)
     # print(only_meals)
     # print(only_meals_totals)
@@ -135,7 +139,7 @@ def load_data(file):
         df,
         total_sales_sum,
         sales_by_item,
-        top_20_sales_items_by_value,
+        top_15_sales_items_by_value,
         only_meals,
         only_meals_totals,
         in_place_meals,
@@ -164,7 +168,7 @@ if uploaded_file is not None:
         data,
         total_sales_sum,
         sales_by_item,
-        top_20_sales_items_by_value,
+        top_15_sales_items_by_value,
         only_meals,
         only_meals_totals,
         in_place_meals,
@@ -186,23 +190,65 @@ if uploaded_file is not None:
     )
 
     st.markdown(
-        f""" #### <br> Sendo <b style='color:#a7c52b'>{locale.format_string('%.0f', only_meals_totals.loc['quantidade'], grouping=True, monetary=False)}</b> refeições no total<br>
+        f""" #### <br> Sendo <b style='color:#a7c52b'>{locale.format_string('%.0f', only_meals_totals.loc['quantidade'], grouping=True, monetary=False)}</b> refeições no total.  :spaghetti:  :curry:<br>
         """,
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        f""" ##### - <b style='color:#a7c52b'>{int(in_place_meals['quantidade'])}</b> foram nos deliveries (plataformas)<br>
+        f""" ##### - <b style='color:#a7c52b'>{int(in_place_meals['quantidade'])}</b> foram no Restaurante   :knife_fork_plate: <br>
         """,
         unsafe_allow_html=True,
     )
     st.markdown(
-        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', delivery_totals.loc['quantidade'], grouping=True, monetary=False)}</b> foram nos deliveries (plataformas)<br>
+        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', delivery_totals.loc['quantidade'], grouping=True, monetary=False)}</b> foram nos deliveries (plataformas)  :motor_scooter:<br>
         """,
         unsafe_allow_html=True,
     )
     st.markdown(
-        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', in_place_delivery.loc['quantidade'], grouping=True, monetary=False)}</b> foram refeições viagem no local<br>
+        f""" ##### - <b style='color:#a7c52b'>{locale.format_string('%.0f', in_place_delivery.loc['quantidade'], grouping=True, monetary=False)}</b> foram refeições viagem no local :handbag:<br>
         """,
         unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        f""" #### <br><br> Top 15 <b style='color:#f19904'>Produtos</b> por valor (R$) <br><br>""",
+        unsafe_allow_html=True,
+    )
+
+    top15_sales_by_value = (
+        alt.Chart(top_15_sales_items_by_value)
+        .mark_bar()
+        .encode(
+            alt.Y(
+                "descricao:N",
+                sort=alt.EncodingSortField("value", op="max", order="descending"),
+                axis=alt.Axis(
+                    title="",
+                    labelPadding=10,
+                    labelLimit=250,
+                ),
+            ),
+            alt.X(
+                "valor_total:Q",
+                axis=alt.Axis(
+                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                ),
+            ),
+            color=alt.condition(
+                alt.datum.position <= 5,
+                alt.value("#f19904"),
+                alt.value("lightgray"),  ## higlight only top 5 items
+            ),
+        )
+        .properties(width=1400, height=600)
+    )
+
+    st.altair_chart(
+        top15_sales_by_value.configure_axis(
+            labelFontSize=16,
+            titleFontSize=20,
+            titleColor="#f19904",
+            grid=False,
+        )
     )
