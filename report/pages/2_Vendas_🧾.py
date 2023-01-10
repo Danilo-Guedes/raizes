@@ -106,13 +106,15 @@ def load_data(file):
         .drop(labels=["mes", "dia", "ano"], axis="columns")
     )
 
-    top_15_sales_items_by_value = sales_by_item.nlargest(15, "valor_total")
+    # ## TOPS DFS
 
-    top_15_sales_items_by_value["position"] = range(
-        1, len(top_15_sales_items_by_value) + 1
+    top_15_sales_items_by_value = sales_by_item.nlargest(15, "valor_total").assign(
+        position=range(1, 16)
     )
 
-    # ## TOPS DFS
+    top_15_sales_items_by_qtd = sales_by_item.nlargest(15, "quantidade").assign(
+        position=range(1, 16)
+    )
 
     # top10_exp_df = (
     #     expenses_by_category_df.nlargest(10, "valor")
@@ -124,7 +126,8 @@ def load_data(file):
     # print(total_sales_sum)
     # print(sales_by_item)
     # print("#" * 99)
-    print(top_15_sales_items_by_value)
+    # print(top_15_sales_items_by_value)
+    # print(top_15_sales_items_by_qtd)
     # print("#" * 99)
     # print(only_meals)
     # print(only_meals_totals)
@@ -140,6 +143,7 @@ def load_data(file):
         total_sales_sum,
         sales_by_item,
         top_15_sales_items_by_value,
+        top_15_sales_items_by_qtd,
         only_meals,
         only_meals_totals,
         in_place_meals,
@@ -169,6 +173,7 @@ if uploaded_file is not None:
         total_sales_sum,
         sales_by_item,
         top_15_sales_items_by_value,
+        top_15_sales_items_by_qtd,
         only_meals,
         only_meals_totals,
         in_place_meals,
@@ -252,12 +257,59 @@ if uploaded_file is not None:
     label_top15_sales_by_value = top15_sales_by_value.mark_text(
         align="left",
         baseline="middle",
-        dx=30,  # Nudges text to right so it doesn't appear on top of the bar
+        dx=5,  # Nudges text to right so it doesn't appear on top of the bar
         fontSize=16,
     ).encode(text=alt.Text("valor_total:Q", format="$,.2f", formatType="number"))
 
     st.altair_chart(
         (top15_sales_by_value + label_top15_sales_by_value).configure_axis(
+            labelFontSize=16,
+            titleFontSize=20,
+            titleColor="#f19904",
+            grid=False,
+        )
+    )
+
+    st.markdown(
+        f""" #### <br><br> Top 15 <b style='color:#f19904'>Produtos</b> por unidades vendidas<br><br>""",
+        unsafe_allow_html=True,
+    )
+
+    top15_sales_by_qtd = (
+        alt.Chart(top_15_sales_items_by_qtd)
+        .mark_bar()
+        .encode(
+            alt.X(
+                "descricao:N",
+                sort=alt.EncodingSortField("value", op="max", order="descending"),
+                axis=alt.Axis(title="", labelPadding=20, labelAngle=-30),
+            ),
+            alt.Y(
+                "quantidade:Q",
+                axis=alt.Axis(
+                    title="Unidades Vendidas",
+                    titlePadding=15,
+                    labels=False,
+                ),
+            ),
+            color=alt.condition(
+                alt.datum.position <= 5,
+                alt.value("#f19904"),
+                alt.value("	darkgray"),  ## higlight only top 5 items
+            ),
+            tooltip=["valor_total", "quantidade", "descricao"],
+        )
+        .properties(width=1600, height=500)
+    )
+
+    label_top15_sales_by_qtd = top15_sales_by_qtd.mark_text(
+        align="center",
+        baseline="bottom",
+        fontSize=18,
+    ).encode(text=alt.Text("quantidade:Q", formatType="number"))
+
+    st.altair_chart(
+        (top15_sales_by_qtd + label_top15_sales_by_qtd).configure_axis(
             labelFontSize=16,
             titleFontSize=20,
             titleColor="#f19904",
