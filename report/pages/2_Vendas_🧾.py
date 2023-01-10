@@ -124,7 +124,7 @@ def load_data(file):
     # print(total_sales_sum)
     # print(sales_by_item)
     # print("#" * 99)
-    # print(top_15_sales_items_by_value)
+    print(top_15_sales_items_by_value)
     # print("#" * 99)
     # print(only_meals)
     # print(only_meals_totals)
@@ -226,26 +226,38 @@ if uploaded_file is not None:
                 axis=alt.Axis(
                     title="",
                     labelPadding=10,
-                    labelLimit=250,
+                    labelLimit=300,
                 ),
             ),
             alt.X(
                 "valor_total:Q",
                 axis=alt.Axis(
-                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                    title="R$ Valor",
+                    titlePadding=15,
+                    format="$,.2f",
+                    tickMinStep=5000,
+                    tickOffset=50,
                 ),
             ),
             color=alt.condition(
                 alt.datum.position <= 5,
                 alt.value("#f19904"),
-                alt.value("lightgray"),  ## higlight only top 5 items
+                alt.value("	darkgray"),  ## higlight only top 5 items
             ),
+            tooltip=["valor_total", "quantidade", "descricao"],
         )
-        .properties(width=1400, height=600)
+        .properties(width=1700, height=600)
     )
 
+    label_top15_sales_by_value = top15_sales_by_value.mark_text(
+        align="left",
+        baseline="middle",
+        dx=30,  # Nudges text to right so it doesn't appear on top of the bar
+        fontSize=16,
+    ).encode(text=alt.Text("valor_total:Q", format="$,.2f", formatType="number"))
+
     st.altair_chart(
-        top15_sales_by_value.configure_axis(
+        (top15_sales_by_value + label_top15_sales_by_value).configure_axis(
             labelFontSize=16,
             titleFontSize=20,
             titleColor="#f19904",
