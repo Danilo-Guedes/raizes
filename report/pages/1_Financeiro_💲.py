@@ -83,6 +83,34 @@ def load_data(file):
         )
     )
 
+    income_sum_by_weekday_df = (
+        income_df.groupby("dia_semana", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+        .sort_values(by="valor", ascending=False)
+    )
+
+    # ADDING TOTAL LAST LINE
+    income_sum_by_weekday_df.loc[len(income_sum_by_weekday_df)] = [
+        "Total",
+        income_sum_by_weekday_df["valor"].sum(),
+    ]
+    # SET VALUES TO CURRENCY
+    income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+    income_sum_by_weekday_df.reset_index(drop=True, inplace=True)
+
+    print(income_sum_by_weekday_df)
+
     income_by_category_df = income_by_category_df.sort_values(
         by="valor", ascending=False
     ).assign(
@@ -118,6 +146,7 @@ def load_data(file):
         income_by_category_df,
         expenses_by_category_df,
         top10_exp_df,
+        income_sum_by_weekday_df,
     )
 
 
@@ -147,6 +176,7 @@ if uploaded_file is not None:
         income_by_category_df,
         expenses_by_category_df,
         top10_exp_df,
+        income_sum_by_weekday_df,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -251,3 +281,12 @@ if uploaded_file is not None:
     )
 
     st.markdown("***")
+
+    st.markdown(
+        f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.table(income_sum_by_weekday_df)
+    st.dataframe(income_sum_by_weekday_df)
