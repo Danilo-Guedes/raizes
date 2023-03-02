@@ -9,12 +9,14 @@ from datetime import date, datetime
 import locale
 from classes import DailyInfo
 from appdirs import user_config_dir
+import pyperclip
 
 
 def main():
-    file, search_date = download_bling_sales_csv()
-    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = datetime(2022, 10, 21)
+    # file, search_date = download_bling_sales_csv()
+    file = f"{Path.cwd()}/excel/daily_sales_report.csv"
+    # search_date = datetime(2023, 3, 1)
+    search_date = date.today()
     info = make_csv_analysis(file, search_date)
     send_whatsapp_msg(info)
 
@@ -151,6 +153,9 @@ E essa é a tabela dos 7 produtos com maior valor de venda
 {tabulate(msg_info.top_7_sales_df, headers=['*Qtd*', '*Total R$*', '*Descrição*'], showindex=False, tablefmt="simple", numalign="left" )}
 """
     print(msg)
+
+    pyperclip.copy(msg)
+    print("Mensagem Copiada no CTRL + C, para utilizar pressione CRTL + V")
 
     chrome_dir = user_config_dir("google-chrome")
     profile_path = os.path.join(chrome_dir, "Default")
