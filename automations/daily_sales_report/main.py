@@ -9,6 +9,7 @@ from datetime import date, datetime
 import locale
 from classes import DailyInfo
 from appdirs import user_config_dir
+import pyperclip
 
 
 def main():
@@ -151,6 +152,9 @@ E essa é a tabela dos 7 produtos com maior valor de venda
 {tabulate(msg_info.top_7_sales_df, headers=['*Qtd*', '*Total R$*', '*Descrição*'], showindex=False, tablefmt="simple", numalign="left" )}
 """
     print(msg)
+
+    pyperclip.copy(msg)
+    print("Dados Copiados, para utilizar pressione CRTL + V")
 
     chrome_dir = user_config_dir("google-chrome")
     profile_path = os.path.join(chrome_dir, "Default")
