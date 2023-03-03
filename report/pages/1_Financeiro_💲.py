@@ -116,9 +116,43 @@ def load_data(file):
         .sort_values(by="valor", ascending=False)
     )
 
+    expenses_sum_by_weekday_df = (
+        expenses_df.groupby("dia_semana", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+        .sort_values(by="valor", ascending=False)
+    )
+
+    expenses_sum_by_day_df = (
+        expenses_df.groupby("data", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+        .sort_values(by="valor", ascending=False)
+    )
+
     ## ADDING DAYWEEK COLUMN
 
     income_sum_by_day_df["dia_semana"] = income_sum_by_day_df["data"].apply(
+        lambda x: weekday_map[x.weekday()]
+    )
+
+    expenses_sum_by_day_df["dia_semana"] = expenses_sum_by_day_df["data"].apply(
         lambda x: weekday_map[x.weekday()]
     )
 
@@ -129,14 +163,27 @@ def load_data(file):
         + " %"
     )
 
+    expenses_sum_by_weekday_df["percentage"] = expenses_sum_by_weekday_df[
+        "valor"
+    ].apply(
+        lambda x: str(round(x / expenses_sum_by_weekday_df["valor"].sum() * 100, 2))
+        + " %"
+    )
+
     # ADDING TOTAL LAST LINE
     income_sum_by_weekday_df.loc[len(income_sum_by_weekday_df)] = [
         "Total",
         income_sum_by_weekday_df["valor"].sum(),
         "100.00 %",
     ]
+    expenses_sum_by_weekday_df.loc[len(expenses_sum_by_weekday_df)] = [
+        "Total",
+        expenses_sum_by_weekday_df["valor"].sum(),
+        "100.00 %",
+    ]
 
     # SET VALUES TO CURRENCY
+
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
         lambda x: locale.currency(x, grouping=True)
     )
@@ -145,9 +192,19 @@ def load_data(file):
         lambda x: locale.currency(x, grouping=True)
     )
 
-    income_sum_by_weekday_df.reset_index(drop=True, inplace=True)
+    expenses_sum_by_weekday_df["valor"] = expenses_sum_by_weekday_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
 
-    print(income_sum_by_weekday_df)
+    expenses_sum_by_day_df["valor"] = expenses_sum_by_day_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    ## RESETING INDEXES AND POSITION COLUMN
+
+    income_sum_by_weekday_df.reset_index(drop=True, inplace=True)
+    income_sum_by_day_df.reset_index(drop=True, inplace=True)
+    expenses_sum_by_day_df.reset_index(drop=True, inplace=True)
 
     income_by_category_df = income_by_category_df.sort_values(
         by="valor", ascending=False
@@ -186,10 +243,9 @@ def load_data(file):
         top10_exp_df,
         income_sum_by_weekday_df,
         income_sum_by_day_df,
+        expenses_sum_by_weekday_df,
+        expenses_sum_by_day_df,
     )
-
-
-# data, tt_income, tt_expenses = load_data()
 
 
 st.set_page_config(layout="wide")
@@ -198,7 +254,6 @@ st.markdown(
     """
  ### Análise Financeira"""
 )
-# data.dtypes
 
 uploaded_file = st.file_uploader(
     label="IMPORTE O EXTRATO NO BLING NO FORMATO CSV",
@@ -217,6 +272,8 @@ if uploaded_file is not None:
         top10_exp_df,
         income_sum_by_weekday_df,
         income_sum_by_day_df,
+        expenses_sum_by_weekday_df,
+        expenses_sum_by_day_df,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -323,7 +380,7 @@ if uploaded_file is not None:
     st.markdown("***")
 
     st.markdown(
-        f""" #### A média de <b style='color:#a7c52b'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias)<br>
+        f""" #### A média de <b style='color:#a7c52b'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias com ocorrências)<br>
         """,
         unsafe_allow_html=True,
     )
@@ -347,3 +404,31 @@ if uploaded_file is not None:
     )
 
     st.table(income_sum_by_day_df)
+
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### A média de <b style='color:#f19904'>Despesas</b> por dia foi de {locale.currency(expenses_df['valor'].sum() / len(expenses_sum_by_day_df), grouping=True) } (o período teve {len(expenses_sum_by_day_df)} dias com ocorrências)<br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### <b style='color:#f19904'>Despesas</b> por dia da semana<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.table(expenses_sum_by_weekday_df)
+
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### <b style='color:#f19904'>Despesas</b> por dia do mês<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.table(expenses_sum_by_day_df)
