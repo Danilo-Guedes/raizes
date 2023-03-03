@@ -4,6 +4,7 @@ import streamlit as st
 import locale
 import altair as alt
 import numpy as np
+from datetime import date
 
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
@@ -44,7 +45,7 @@ def load_data(file):
     df["dia"] = df["data"].dt.day
     df["mês"] = df["data"].dt.month
     df["ano"] = df["data"].dt.year
-    df["dia_semana"] = df["data"].dt.day_name(locale.getlocale())
+    df["dia_semana"] = df["data"].dt.day_name(locale.getlocale()).astype("category")
 
     df["data"] = df["data"].dt.date
 
@@ -98,15 +99,59 @@ def load_data(file):
         .sort_values(by="valor", ascending=False)
     )
 
+    print(income_df.columns)
+
+    income_sum_by_day_df = (
+        income_df.groupby("data", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mês",
+                "ano",
+            ],
+            axis="columns",
+        )
+        .sort_values(by="valor", ascending=False)
+    )
+
+    ## ADDING DAYWEEK COLUMN
+    weekday_map = [
+        "segunda-feira",
+        "terça-feira",
+        "quarta-feira",
+        "quinta-feira",
+        "sexta-feira",
+        "sábado",
+        "domingo",
+    ]
+
+    income_sum_by_day_df["dia_semana"] = income_sum_by_day_df["data"].apply(
+        lambda x: weekday_map[x.weekday()]
+    )
+
+    print(income_sum_by_day_df)
+
+    ## ADDING PERCENTAGE COLUMN
+
+    income_sum_by_weekday_df["percentage"] = income_sum_by_weekday_df["valor"].apply(
+        lambda x: str(round(x / income_sum_by_weekday_df["valor"].sum() * 100, 2))
+        + " %"
+    )
+
     # ADDING TOTAL LAST LINE
     income_sum_by_weekday_df.loc[len(income_sum_by_weekday_df)] = [
         "Total",
         income_sum_by_weekday_df["valor"].sum(),
+        "100.00 %",
     ]
+
     # SET VALUES TO CURRENCY
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
         lambda x: locale.currency(x, grouping=True)
     )
+
     income_sum_by_weekday_df.reset_index(drop=True, inplace=True)
 
     print(income_sum_by_weekday_df)
@@ -147,6 +192,7 @@ def load_data(file):
         expenses_by_category_df,
         top10_exp_df,
         income_sum_by_weekday_df,
+        income_sum_by_day_df,
     )
 
 
@@ -177,6 +223,7 @@ if uploaded_file is not None:
         expenses_by_category_df,
         top10_exp_df,
         income_sum_by_weekday_df,
+        income_sum_by_day_df,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -289,4 +336,13 @@ if uploaded_file is not None:
     )
 
     st.table(income_sum_by_weekday_df)
-    st.dataframe(income_sum_by_weekday_df)
+
+    st.markdown("***")
+
+    st.markdown(
+        f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana 2<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.table(income_sum_by_day_df)
