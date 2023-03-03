@@ -6,6 +6,8 @@ import altair as alt
 import numpy as np
 from datetime import date
 
+from utils.date_util import weekday_map
+
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
@@ -99,8 +101,6 @@ def load_data(file):
         .sort_values(by="valor", ascending=False)
     )
 
-    print(income_df.columns)
-
     income_sum_by_day_df = (
         income_df.groupby("data", as_index=False)
         .sum(numeric_only=True)
@@ -117,21 +117,10 @@ def load_data(file):
     )
 
     ## ADDING DAYWEEK COLUMN
-    weekday_map = [
-        "segunda-feira",
-        "terça-feira",
-        "quarta-feira",
-        "quinta-feira",
-        "sexta-feira",
-        "sábado",
-        "domingo",
-    ]
 
     income_sum_by_day_df["dia_semana"] = income_sum_by_day_df["data"].apply(
         lambda x: weekday_map[x.weekday()]
     )
-
-    print(income_sum_by_day_df)
 
     ## ADDING PERCENTAGE COLUMN
 
@@ -149,6 +138,10 @@ def load_data(file):
 
     # SET VALUES TO CURRENCY
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    income_sum_by_day_df["valor"] = income_sum_by_day_df["valor"].apply(
         lambda x: locale.currency(x, grouping=True)
     )
 
@@ -330,6 +323,14 @@ if uploaded_file is not None:
     st.markdown("***")
 
     st.markdown(
+        f""" #### A média de <b style='color:#a7c52b'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias)<br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("***")
+
+    st.markdown(
         f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana<br><br>
         """,
         unsafe_allow_html=True,
@@ -340,7 +341,7 @@ if uploaded_file is not None:
     st.markdown("***")
 
     st.markdown(
-        f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana 2<br><br>
+        f""" #### <b style='color:#a7c52b'>Receitas</b> por dia do mês<br><br>
         """,
         unsafe_allow_html=True,
     )
