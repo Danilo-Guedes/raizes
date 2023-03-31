@@ -1,7 +1,6 @@
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from dotenv import load_dotenv
-import pywhatkit as pwk
 from tabulate import tabulate
 import os
 from pathlib import Path
