@@ -3,7 +3,6 @@ import pyperclip
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from dotenv import load_dotenv
-import pywhatkit as pwk
 from tabulate import tabulate
 import os
 from pathlib import Path
@@ -17,7 +16,9 @@ def main():
     sales_date_str = input("Qual data deseja pesquisar?  : ")
     orders = call_bling_api(sales_date_str)
 
-    make_data_analysis(orders, sales_date_str)
+    products_list = data_adapter(orders, sales_date_str)
+
+    do_the_pandas_magic(products_list)
 
     # file, search_date = download_bling_sales_csv()
     # # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
@@ -29,17 +30,17 @@ def main():
 def call_bling_api(date_string):
 
     endpoint = "https://bling.com.br/Api/v2/pedidos/json/"
-    api_key = "e87d29ba642a9344a8cd7358e26f70e3e4903aa4bf285be4a0177e35aa9f249882a172ed"
+    api_key = os.getenv("BLING_API_KEY")
     search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
     try:
         r = requests.get(
             endpoint, params={"apikey": api_key, "filters": search_date_param}
         )
-        print(r.url)
+        # print(r.url)
 
         dict_res = r.json()
-        print(dict.keys(dict_res))
+        # print(dict.keys(dict_res))
 
         api_return = dict_res.get("retorno")
         # print("retorno", api_return)
@@ -67,28 +68,58 @@ def call_bling_api(date_string):
         print("aqui deu erro", err)
 
 
-def make_data_analysis(raw_orders, searched_date):
-    print(
-        "aqui é pra jogar o dado pro pandas e gerar os totais conf o retorno da função antiga"
-    )
-    print("e chegou os seguintes parametros")
+def data_adapter(raw_orders, searched_date):
+    """
+    aqui é pra jogar o dado pro pandas e gerar os totais conf o retorno da função antiga
+    """
+    # print("e chegou os seguintes parametros")
     # print("orders ", raw_orders[:2])
-    print("searched_date", searched_date)
+    # print("searched_date", searched_date)
 
     print("--------------------------------")
     print("a primeira order", raw_orders[0]["pedido"])
     print(dict.keys(raw_orders[0]["pedido"]))
     print("--------------------------------")
 
-    print(raw_orders[0]["pedido"]["itens"])
-    print("tamanho da lista itens", len(raw_orders[0]["pedido"]["itens"]))
+    print("raw_orders legnth", len(raw_orders))
+
+    list_of_products = []
+
+    for order in raw_orders:
+
+        # print("order ", order)
+        # print("$$$$$$$$$$$$$$$$$$$$")
+        # print("order filho ", order["pedido"]["itens"])
+        # print("len do order filho ", len(order["pedido"]["itens"]))
+
+        for product in order["pedido"]["itens"]:
+            # print("o produto ===============>", product["item"])
+            # print("a qtde de produtos ===============> ", product["item"]["quantidade"])
+            # print(
+            #     "o valor unitário do produto $$$$$$$$$$$$$ ",
+            #     product["item"]["valorunidade"],
+            # )
+
+            list_of_products.append(product["item"])
+
+    # print(raw_orders[0]["pedido"]["itens"])
+    # print("tamanho da lista itens", len(raw_orders[0]["pedido"]["itens"]))
 
     print("--------------------------------")
 
-    print(dict.keys(raw_orders[0]["pedido"]["itens"][0]))
+    print("E POR ULTIMO A LISTA")
 
-    print("o item", raw_orders[0]["pedido"]["itens"][0]["item"])
-    print(dict.keys(raw_orders[0]["pedido"]["itens"][0]["item"]))
+    print(list_of_products)
+    print("o len da lista", len(list_of_products))
+
+    return list_of_products
+
+    # print(dict.keys(raw_orders[0]["pedido"]["itens"][0]))
+
+    # print("o 1o item", raw_orders[0]["pedido"]["itens"][0]["item"])
+    # print(dict.keys(raw_orders[0]["pedido"]["itens"][0]["item"]))
+
+    # print("--------------------------------")
 
     # df = pd.read_csv(file, sep=";", decimal=",", thousands=".", encoding="utf_8")
     # df.columns = df.columns.str.replace(" ", "_").str.lower()
@@ -144,6 +175,18 @@ def make_data_analysis(raw_orders, searched_date):
     #     total_sales,
     #     searched_date,
     # )
+
+
+def do_the_pandas_magic(prod_list):
+    print("o type", type(prod_list))
+    # the_json_list = json.loads(prod_list)
+    # print("o type depois", type(the_json_list))
+
+    # df = pd.read_json(the_json_list)
+
+    df = pd.DataFrame(prod_list)
+
+    print("o df", df)
 
 
 def send_whatsapp_msg(msg_info):
