@@ -188,6 +188,8 @@ def do_the_pandas_magic(prod_list):
 
     print("o df", df)
 
+    df.to_csv(f"{Path.cwd()}/excel/api.csv")
+
 
 def send_whatsapp_msg(msg_info):
 
