@@ -72,54 +72,66 @@ def data_adapter(raw_orders, searched_date):
     """
     aqui é pra jogar o dado pro pandas e gerar os totais conf o retorno da função antiga
     """
-    # print("e chegou os seguintes parametros")
-    # print("orders ", raw_orders[:2])
-    # print("searched_date", searched_date)
-
-    print("--------------------------------")
-    print("a primeira order", raw_orders[0]["pedido"])
-    print(dict.keys(raw_orders[0]["pedido"]))
-    print("--------------------------------")
-
-    print("raw_orders legnth", len(raw_orders))
 
     list_of_products = []
 
     for order in raw_orders:
+        if order["pedido"]["desconto"] != "0,00":
 
-        # print("order ", order)
-        # print("$$$$$$$$$$$$$$$$$$$$")
-        # print("order filho ", order["pedido"]["itens"])
-        # print("len do order filho ", len(order["pedido"]["itens"]))
+            discount_in_cash = float(order["pedido"]["totalprodutos"]) - float(
+                order["pedido"]["totalvenda"]
+            )
+
+            for order_itens in order["pedido"]["itens"]:
+                final_item_value = float(order_itens["item"]["quantidade"]) * float(
+                    order_itens["item"]["valorunidade"]
+                )
+
+                if final_item_value > discount_in_cash:
+                    order_itens["item"]["descontoItem"] = discount_in_cash
+                    break
 
         for product in order["pedido"]["itens"]:
-            # print("o produto ===============>", product["item"])
-            # print("a qtde de produtos ===============> ", product["item"]["quantidade"])
-            # print(
-            #     "o valor unitário do produto $$$$$$$$$$$$$ ",
-            #     product["item"]["valorunidade"],
-            # )
-
             list_of_products.append(product["item"])
 
-    # print(raw_orders[0]["pedido"]["itens"])
-    # print("tamanho da lista itens", len(raw_orders[0]["pedido"]["itens"]))
-
-    print("--------------------------------")
-
-    print("E POR ULTIMO A LISTA")
-
-    print(list_of_products)
-    print("o len da lista", len(list_of_products))
+    print("Dado Tratado com Sucesso e enviado pra o Pandas fazer sua mágica....")
 
     return list_of_products
 
-    # print(dict.keys(raw_orders[0]["pedido"]["itens"][0]))
 
-    # print("o 1o item", raw_orders[0]["pedido"]["itens"][0]["item"])
-    # print(dict.keys(raw_orders[0]["pedido"]["itens"][0]["item"]))
+def do_the_pandas_magic(prod_list):
 
-    # print("--------------------------------")
+    df = pd.DataFrame(prod_list)
+
+    print("columns", df.columns)
+
+    # print("types before", df.dtypes)
+
+    df = df.drop(
+        columns=[
+            "un",
+            "precocusto",
+            "pesoBruto",
+            "largura",
+            "altura",
+            "profundidade",
+            "descricaoDetalhada",
+            "unidadeMedida",
+            "gtin",
+        ]
+    )
+
+    df["quantidade"] = df["quantidade"].astype("float64")
+    df["valorunidade"] = df["valorunidade"].astype("float64")
+    df["descontoItem"] = df["descontoItem"].astype("float64")
+    df["total"] = (df["valorunidade"] * df["quantidade"]) - df["descontoItem"]
+
+    print("types after", df.dtypes)
+
+    print("o df antes de gerar o arquivo", df)
+
+    df.to_csv(f"{Path.cwd()}/excel/api.csv", sep=";", decimal=",")
+    print("### Arquivo Gerado com Sucesso! ###")
 
     # df = pd.read_csv(file, sep=";", decimal=",", thousands=".", encoding="utf_8")
     # df.columns = df.columns.str.replace(" ", "_").str.lower()
@@ -175,20 +187,6 @@ def data_adapter(raw_orders, searched_date):
     #     total_sales,
     #     searched_date,
     # )
-
-
-def do_the_pandas_magic(prod_list):
-    print("o type", type(prod_list))
-    # the_json_list = json.loads(prod_list)
-    # print("o type depois", type(the_json_list))
-
-    # df = pd.read_json(the_json_list)
-
-    df = pd.DataFrame(prod_list)
-
-    print("o df", df)
-
-    df.to_csv(f"{Path.cwd()}/excel/api.csv")
 
 
 def send_whatsapp_msg(msg_info):
