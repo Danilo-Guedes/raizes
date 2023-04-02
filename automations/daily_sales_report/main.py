@@ -16,9 +16,9 @@ def main():
     sales_date_str = input("Qual data deseja pesquisar?  : ")
     orders = call_bling_api(sales_date_str)
 
-    products_list = data_adapter(orders, sales_date_str)
+    products_list = api_response_to_list(orders, sales_date_str)
 
-    do_the_pandas_magic(products_list)
+    generate_clean_df(products_list)
 
     # file, search_date = download_bling_sales_csv()
     # # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
@@ -68,9 +68,9 @@ def call_bling_api(date_string):
         print("aqui deu erro", err)
 
 
-def data_adapter(raw_orders, searched_date):
+def api_response_to_list(raw_orders, searched_date):
     """
-    aqui é pra jogar o dado pro pandas e gerar os totais conf o retorno da função antiga
+    tranform the api response into a list while treat discount values
     """
 
     list_of_products = []
@@ -99,7 +99,7 @@ def data_adapter(raw_orders, searched_date):
     return list_of_products
 
 
-def do_the_pandas_magic(prod_list):
+def generate_clean_df(prod_list):
 
     df = pd.DataFrame(prod_list)
 
