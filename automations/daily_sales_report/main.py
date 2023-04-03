@@ -76,20 +76,32 @@ def api_response_to_list(raw_orders, searched_date):
     list_of_products = []
 
     for order in raw_orders:
-        if order["pedido"]["desconto"] != "0,00":
+        # print(f"a ORDERMMMMMM ==> {order}\n\n\n\n")
+        if order["pedido"]["desconto"] != "0,00":  # verificando se tem desconto
+
+            # print("aqui teve desconto", order["pedido"]["desconto"])
 
             discount_in_cash = float(order["pedido"]["totalprodutos"]) - float(
                 order["pedido"]["totalvenda"]
             )
 
+            # print("discount_in_cash", discount_in_cash)
+
             for order_itens in order["pedido"]["itens"]:
+                # print("no forr =>>", order_itens)
                 final_item_value = float(order_itens["item"]["quantidade"]) * float(
                     order_itens["item"]["valorunidade"]
                 )
 
                 if final_item_value > discount_in_cash:
-                    order_itens["item"]["descontoItem"] = discount_in_cash
+                    order_itens["item"]["desconto"] = discount_in_cash
                     break
+                else:
+                    order_itens["item"]["desconto"] = "0.00"
+
+        else:  # zerar valor de desconto pq as vzs vem uns valores estranhos
+            for order_itens in order["pedido"]["itens"]:
+                order_itens["item"]["desconto"] = "0.00"
 
         for product in order["pedido"]["itens"]:
             list_of_products.append(product["item"])
@@ -111,6 +123,7 @@ def generate_clean_df(prod_list):
         columns=[
             "un",
             "precocusto",
+            "descontoItem",
             "pesoBruto",
             "largura",
             "altura",
@@ -123,8 +136,8 @@ def generate_clean_df(prod_list):
 
     df["quantidade"] = df["quantidade"].astype("float64")
     df["valorunidade"] = df["valorunidade"].astype("float64")
-    df["descontoItem"] = df["descontoItem"].astype("float64")
-    df["total"] = (df["valorunidade"] * df["quantidade"]) - df["descontoItem"]
+    df["desconto"] = df["desconto"].astype("float64")
+    df["total"] = (df["valorunidade"] * df["quantidade"]) - df["desconto"]
 
     print("types after", df.dtypes)
 
