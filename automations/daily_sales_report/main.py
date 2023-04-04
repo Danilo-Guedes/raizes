@@ -148,6 +148,17 @@ def generate_clean_df(prod_list):
 
     print("types after", df.dtypes)
 
+    ## GROUPING ROWS WITH THE SAME ITEMNAME
+
+    agg_options = {
+        "quantidade": "sum",
+        "valorunidade": "last",
+        "desconto": "sum",
+        "total": "sum",
+    }
+
+    df = df.groupby(df["descricao"]).aggregate(agg_options)
+
     print("o df antes de gerar o arquivo", df)
 
     df.to_csv(f"{Path.cwd()}/excel/api.csv", sep=";", decimal=",")
