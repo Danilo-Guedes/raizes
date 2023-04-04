@@ -28,7 +28,7 @@ def main():
 
 def call_bling_api(date_string):
 
-    endpoint = "https://bling.com.br/Api/v2/pedidos/json/"
+    endpoint = os.getenv("BLING_ORDERS_ENDPOINT")
     api_key = os.getenv("BLING_API_KEY")
     search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
