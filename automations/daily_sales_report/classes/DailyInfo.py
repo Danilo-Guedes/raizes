@@ -11,4 +11,3 @@ class DailyInfo:
     third_party_delivery: int
     top_7_sales_df: pd.DataFrame
     total_sales: float
-    search_date: datetime.date

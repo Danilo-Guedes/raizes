@@ -1,7 +1,8 @@
+import requests
+import pyperclip
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from dotenv import load_dotenv
-import pywhatkit as pwk
 from tabulate import tabulate
 import os
 from pathlib import Path
@@ -12,110 +13,181 @@ from appdirs import user_config_dir
 
 
 def main():
-    file, search_date = download_bling_sales_csv()
-    # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # search_date = datetime(2022, 10, 21)
-    info = make_csv_analysis(file, search_date)
-    send_whatsapp_msg(info)
+    search_date_str = input("Qual data deseja pesquisar?  : ")
+
+    orders = call_bling_api(search_date_str)
+
+    products_list = api_response_to_list(orders, search_date_str)
+
+    clean_df = generate_clean_df(products_list)
+
+    info = prepare_relevant_info(clean_df)
+
+    send_whatsapp_msg(info, search_date_str)
 
 
-def download_bling_sales_csv():
-    """log in to Bling ERP, browse and saves sales csv file"""
+def call_bling_api(date_string):
 
-    path = Path()
+    endpoint = "https://bling.com.br/Api/v2/pedidos/json/"
+    api_key = os.getenv("BLING_API_KEY")
+    search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
-    download_folder_path = f"{path.cwd()}/excel"
+    try:
+        r = requests.get(
+            endpoint, params={"apikey": api_key, "filters": search_date_param}
+        )
 
-    sales_date_str = input("Qual data deseja pesquisar?  : ")
+        dict_res = r.json()
 
-    print("Iniciando extração dos dados do ERP Bling")
+        api_return = dict_res.get("retorno")
 
-    selected_date = datetime.strptime(sales_date_str, "%d/%m/%Y").date()
+        if api_return.get("erros") is not None:
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, args=["--start-maximized"])
-        page = browser.new_page(no_viewport=True)
-        page.goto(os.getenv("BLING_LOGIN_URL"))
-        print(f"abrindo {page.title()}")
+            api_errors = api_return.get("erros")
 
-        page.locator("id=username").fill(os.getenv("BLING_USERNAME"))
-        page.locator("id=senha").fill(os.getenv("BLING_PASSWORD"))
-        page.locator("button:has-text('Entrar')").click()
+            if type(api_errors) == list:
+                print("erro na api ==>>>", api_errors[0]["erro"]["msg"])
+            else:
+                print("erro na api ==>>>", api_errors["erro"]["msg"])
 
-        print("Acesso do Bling realizado")
-        page.locator("xpath=//*[@id='menu-novo']/ul[1]/li[4]").click()
-        page.locator("text=Relatórios >> nth=2").click()
-        page.locator("text=Relatório de Vendas").click()
-        page.locator("#periodoPesq").click()
-        page.locator("#periodoPesq").select_option(value="opc-dia")
+        else:
+            print("Api do Blig retornou com sucesso!")
+            orders = api_return.get("pedidos")
 
-        page.locator("#p-data").fill(sales_date_str)
+            if orders is not None:
+                return orders
 
-        page.locator("#campo1").click()
-        page.locator("#campo1").select_option(value="p")
-
-        page.wait_for_timeout(1000)
-
-        page.locator("#btn_visualizar").click()
-
-        with page.expect_download() as download_info:
-            # Perform the action that initiates download
-            page.locator("#exportarRelatorio").click()
-            page.locator("button:has-text('Exportar')").click()
-
-        download = download_info.value
-
-        file_path = f"{download_folder_path}/daily_sales_report.csv"
-
-        download.save_as(file_path)
-
-        print("Arquivo baixado e pronto para processamento dos dados")
-
-        page.close()
-        browser.close()
-
-        return file_path, selected_date
+    except Exception as err:
+        print("aqui deu erro", err)
 
 
-def make_csv_analysis(file, searched_date):
-    df = pd.read_csv(file, sep=";", decimal=",", thousands=".", encoding="utf_8")
-    df.columns = df.columns.str.replace(" ", "_").str.lower()
-    # print(df.columns)
-    df = df.drop(columns=df.columns[1])[:-1]
+def api_response_to_list(raw_orders, searched_date):
+    """
+    tranform the api response into a list while treat discount values
+    """
 
-    df_by_value = df.sort_values(by=["total_venda"], ascending=False)
-    df = df.sort_values(by=["qtde"], ascending=False)
+    list_of_products = []
 
-    total_sales = round(df["total_venda"].sum(), 2)
+    for order in raw_orders:
+        # print(f"a ORDERMMMMMM ==> {order}\n\n\n\n")
+        if order["pedido"]["desconto"] != "0,00":  # verificando se tem desconto
 
-    top_seven_by_value = df_by_value.head(7)[["produto", "qtde", "total_venda"]]
+            # print("aqui teve desconto", order["pedido"]["desconto"])
 
+            discount_in_cash = float(order["pedido"]["totalprodutos"]) - float(
+                order["pedido"]["totalvenda"]
+            )
+
+            # print("discount_in_cash", discount_in_cash)
+            for order_itens in order["pedido"][
+                "itens"
+            ]:  # initializing every discout as 0.00
+                order_itens["item"]["desconto"] = "0.00"
+
+            for order_itens in order["pedido"]["itens"]:
+
+                # print("no forr =>>", order_itens)
+                final_item_value = float(order_itens["item"]["quantidade"]) * float(
+                    order_itens["item"]["valorunidade"]
+                )
+
+                if final_item_value > discount_in_cash:
+                    order_itens["item"]["desconto"] = discount_in_cash
+                    break
+
+        else:  # zerar valor de desconto mesmo qdo o pedido-desconto é 0 mas vem uns valores estranhos de desconto no item
+
+            for order_itens in order["pedido"]["itens"]:
+                order_itens["item"]["desconto"] = "0.00"
+
+        for product in order["pedido"]["itens"]:
+            # if product["item"]["desconto"] != "0.00":
+            #     print("aqui deu ruim", product)
+
+            list_of_products.append(product["item"])
+
+    print("Dado Tratado com Sucesso e enviado pra o Pandas fazer sua mágica....")
+
+    return list_of_products
+
+
+def generate_clean_df(prod_list):
+
+    df = pd.DataFrame(prod_list)
+
+    df = df.drop(
+        columns=[
+            "un",
+            "precocusto",
+            "descontoItem",
+            "pesoBruto",
+            "largura",
+            "altura",
+            "profundidade",
+            "descricaoDetalhada",
+            "unidadeMedida",
+            "gtin",
+        ]
+    )
+
+    df["quantidade"] = df["quantidade"].astype("float64")
+    df["valorunidade"] = df["valorunidade"].astype("float64")
+    df["desconto"] = df["desconto"].astype("float64")
+    df["total"] = (df["valorunidade"] * df["quantidade"]) - df["desconto"]
+
+    # GROUPING ROWS WITH THE SAME CODE
+    agg_options = {
+        "quantidade": "sum",
+        "valorunidade": "last",
+        "descricao": "last",
+        "desconto": "sum",
+        "total": "sum",
+    }
+
+    df = df.groupby(df["codigo"]).aggregate(agg_options)
+
+    df.to_csv(f"{Path.cwd()}/excel/api.csv", sep=";", decimal=",")
+
+    print("### Arquivo Gerado com Sucesso! ###")
+
+    return df
+
+
+def prepare_relevant_info(dataframe):
+
+    df_by_value = dataframe.sort_values(by=["total"], ascending=False)
+
+    total_sales = round(dataframe["total"].sum(), 2)
+
+    top_seven_by_value = df_by_value.head(7)[["quantidade", "total", "descricao"]]
+
+    ##handle R$ locale currency
     top_seven_by_value = top_seven_by_value.assign(
-        total_venda=top_seven_by_value["total_venda"]
-        .astype("float16")
-        .map(lambda x: locale.currency(x, grouping=True)),
-        qtde=top_seven_by_value["qtde"].astype("int"),
-        # produto=top_seven_by_value['produto'].astype('string').str[:15],
-    ).reindex(columns=["qtde", "total_venda", "produto"])
+        total=top_seven_by_value["total"].map(
+            lambda x: locale.currency(x, grouping=True)
+        )
+    )
 
-    # print(top_seven_by_value)
-
-    produtcs_to_count_as_client = df[df["produto"].str.contains("*", regex=False)]
-
-    in_place_delivery = df[df["produto"].str.startswith("(Viagem")]
-
-    # print(in_place_delivery)
-
-    third_party_delivery = df[
-        df["produto"].str.contains("Delivery", regex=False)
-        & df["produto"].str.contains("*", regex=False)
+    produtcs_to_count_as_client = dataframe[
+        dataframe["descricao"].str.contains("*", regex=False)
     ]
 
-    number_of_clients_in_bling = produtcs_to_count_as_client["qtde"].sum().astype("int")
+    in_place_delivery = dataframe[dataframe["descricao"].str.startswith("(Viagem")]
 
-    number_of_in_place_delivery = in_place_delivery["qtde"].sum().astype("int")
+    third_party_delivery = dataframe[
+        dataframe["descricao"].str.contains("Delivery", regex=False)
+        & dataframe["descricao"].str.contains("*", regex=False)
+    ]
 
-    number_of_third_party_delivery = third_party_delivery["qtde"].sum().astype("int")
+    number_of_clients_in_bling = (
+        produtcs_to_count_as_client["quantidade"].sum().astype("int")
+    )
+
+    number_of_in_place_delivery = in_place_delivery["quantidade"].sum().astype("int")
+
+    number_of_third_party_delivery = (
+        third_party_delivery["quantidade"].sum().astype("int")
+    )
 
     number_of_in_place_meals = (
         number_of_clients_in_bling
@@ -130,14 +202,15 @@ def make_csv_analysis(file, searched_date):
         number_of_third_party_delivery,
         top_seven_by_value,
         total_sales,
-        searched_date,
     )
 
 
-def send_whatsapp_msg(msg_info):
+def send_whatsapp_msg(msg_info, search_date_str):
+
+    search_date = datetime.strptime(search_date_str, "%d/%m/%Y").date()
 
     msg = f"""
-No(a) *{handle_week_text(datetime.strftime(msg_info.search_date, '%A'))}* dia *{msg_info.search_date.strftime('%d/%m/%Y')}* vendemos *{msg_info.general_total}* refeições no TOTAL
+No(a) *{handle_week_text(datetime.strftime(search_date, '%A'))}* dia *{search_date.strftime('%d/%m/%Y')}* vendemos *{msg_info.general_total}* refeições no TOTAL
 
 O RECEITA foi de => *{locale.currency(msg_info.total_sales, grouping=True)}*
 
@@ -146,11 +219,14 @@ ATENDIDAS EM MESA => *{msg_info.in_place_meals}*
 LEVOU MARMITA => *{msg_info.in_place_delivery}*
 APPS DE DELIVERY => *{msg_info.third_party_delivery}*
 
-E essa eh a tabela dos 7 produtos com maior valor de venda
+E essa é a tabela dos 7 produtos com maior valor de venda
 
 {tabulate(msg_info.top_7_sales_df, headers=['*Qtd*', '*Total R$*', '*Descrição*'], showindex=False, tablefmt="simple", numalign="left" )}
 """
     print(msg)
+
+    pyperclip.copy(msg)
+    print("Dados Copiados, para utilizar pressione CRTL + V")
 
     chrome_dir = user_config_dir("google-chrome")
     profile_path = os.path.join(chrome_dir, "Default")
@@ -163,19 +239,24 @@ E essa eh a tabela dos 7 produtos com maior valor de venda
                 args=["--start-maximized"],
                 no_viewport=True,
             )
+
             page = context.new_page()
 
             url = (
                 f"https://web.whatsapp.com/accept?code={os.getenv('WHATSAPP_GROUP_ID')}"
             )
             # print(url)
-            page.goto(url)
             print(f"abrindo {page.title()}")
-            page.locator("div [title='Mensagem']").fill(msg)
-            page.locator("[aria-label='Enviar']").click()
+            page.goto(url, wait_until="domcontentloaded")
+            print("WhatsappWeb Acessado com Sucesso!")
+            msg_input = page.locator("div [title='Mensagem']")
+            msg_input.fill(msg)
+            send_btn = page.locator("[aria-label='Enviar']")
+            send_btn.click()
             print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(5000)
+            page.wait_for_timeout(2500)
             page.close()
+
     except Exception as Error:
         print(f"aqui deu ruim {Error}")
 
