@@ -13,18 +13,17 @@ from appdirs import user_config_dir
 
 
 def main():
-    sales_date_str = input("Qual data deseja pesquisar?  : ")
-    orders = call_bling_api(sales_date_str)
+    search_date_str = input("Qual data deseja pesquisar?  : ")
 
-    products_list = api_response_to_list(orders, sales_date_str)
+    orders = call_bling_api(search_date_str)
 
-    generate_clean_df(products_list)
+    products_list = api_response_to_list(orders, search_date_str)
 
-    # file, search_date = download_bling_sales_csv()
-    # # file = download_folder_path = f"{Path.cwd()}/excel/daily_sales_report.csv"
-    # # search_date = datetime(2022, 10, 21)
-    # info = make_csv_analysis(file, search_date)
-    # send_whatsapp_msg(info)
+    clean_df = generate_clean_df(products_list)
+
+    info = prepare_relevant_info(clean_df)
+
+    send_whatsapp_msg(info, search_date_str)
 
 
 def call_bling_api(date_string):
@@ -37,17 +36,14 @@ def call_bling_api(date_string):
         r = requests.get(
             endpoint, params={"apikey": api_key, "filters": search_date_param}
         )
-        # print(r.url)
 
         dict_res = r.json()
-        # print(dict.keys(dict_res))
 
         api_return = dict_res.get("retorno")
-        # print("retorno", api_return)
 
         if api_return.get("erros") is not None:
+
             api_errors = api_return.get("erros")
-            print(api_errors)
 
             if type(api_errors) == list:
                 print("erro na api ==>>>", api_errors[0]["erro"]["msg"])
@@ -59,9 +55,6 @@ def call_bling_api(date_string):
             orders = api_return.get("pedidos")
 
             if orders is not None:
-                # print("orders", orders)
-                print(f"{len(orders)} ocorrências de vendas")
-                print("type da orders", type(orders))
                 return orders
 
     except Exception as err:
@@ -122,10 +115,6 @@ def generate_clean_df(prod_list):
 
     df = pd.DataFrame(prod_list)
 
-    print("columns", df.columns)
-
-    # print("types before", df.dtypes)
-
     df = df.drop(
         columns=[
             "un",
@@ -146,84 +135,82 @@ def generate_clean_df(prod_list):
     df["desconto"] = df["desconto"].astype("float64")
     df["total"] = (df["valorunidade"] * df["quantidade"]) - df["desconto"]
 
-    print("types after", df.dtypes)
-
-    ## GROUPING ROWS WITH THE SAME ITEMNAME
-
+    # GROUPING ROWS WITH THE SAME CODE
     agg_options = {
         "quantidade": "sum",
         "valorunidade": "last",
+        "descricao": "last",
         "desconto": "sum",
         "total": "sum",
     }
 
-    df = df.groupby(df["descricao"]).aggregate(agg_options)
-
-    print("o df antes de gerar o arquivo", df)
+    df = df.groupby(df["codigo"]).aggregate(agg_options)
 
     df.to_csv(f"{Path.cwd()}/excel/api.csv", sep=";", decimal=",")
+
     print("### Arquivo Gerado com Sucesso! ###")
 
-    # df = pd.read_csv(file, sep=";", decimal=",", thousands=".", encoding="utf_8")
-    # df.columns = df.columns.str.replace(" ", "_").str.lower()
-    # # print(df.columns)
-    # df = df.drop(columns=df.columns[1])[:-1]
-
-    # df_by_value = df.sort_values(by=["total_venda"], ascending=False)
-    # df = df.sort_values(by=["qtde"], ascending=False)
-
-    # total_sales = round(df["total_venda"].sum(), 2)
-
-    # top_seven_by_value = df_by_value.head(7)[["produto", "qtde", "total_venda"]]
-
-    # top_seven_by_value = top_seven_by_value.assign(
-    #     total_venda=top_seven_by_value["total_venda"]
-    #     .astype("float16")
-    #     .map(lambda x: locale.currency(x, grouping=True)),
-    #     qtde=top_seven_by_value["qtde"].astype("int"),
-    #     # produto=top_seven_by_value['produto'].astype('string').str[:15],
-    # ).reindex(columns=["qtde", "total_venda", "produto"])
-
-    # # print(top_seven_by_value)
-
-    # produtcs_to_count_as_client = df[df["produto"].str.contains("*", regex=False)]
-
-    # in_place_delivery = df[df["produto"].str.startswith("(Viagem")]
-
-    # # print(in_place_delivery)
-
-    # third_party_delivery = df[
-    #     df["produto"].str.contains("Delivery", regex=False)
-    #     & df["produto"].str.contains("*", regex=False)
-    # ]
-
-    # number_of_clients_in_bling = produtcs_to_count_as_client["qtde"].sum().astype("int")
-
-    # number_of_in_place_delivery = in_place_delivery["qtde"].sum().astype("int")
-
-    # number_of_third_party_delivery = third_party_delivery["qtde"].sum().astype("int")
-
-    # number_of_in_place_meals = (
-    #     number_of_clients_in_bling
-    #     - number_of_in_place_delivery
-    #     - number_of_third_party_delivery
-    # )
-
-    # return DailyInfo(
-    #     number_of_clients_in_bling,
-    #     number_of_in_place_meals,
-    #     number_of_in_place_delivery,
-    #     number_of_third_party_delivery,
-    #     top_seven_by_value,
-    #     total_sales,
-    #     searched_date,
-    # )
+    return df
 
 
-def send_whatsapp_msg(msg_info):
+def prepare_relevant_info(dataframe):
+
+    df_by_value = dataframe.sort_values(by=["total"], ascending=False)
+
+    total_sales = round(dataframe["total"].sum(), 2)
+
+    top_seven_by_value = df_by_value.head(7)[["quantidade", "total", "descricao"]]
+
+    ##handle R$ locale currency
+    top_seven_by_value = top_seven_by_value.assign(
+        total=top_seven_by_value["total"].map(
+            lambda x: locale.currency(x, grouping=True)
+        )
+    )
+
+    produtcs_to_count_as_client = dataframe[
+        dataframe["descricao"].str.contains("*", regex=False)
+    ]
+
+    in_place_delivery = dataframe[dataframe["descricao"].str.startswith("(Viagem")]
+
+    third_party_delivery = dataframe[
+        dataframe["descricao"].str.contains("Delivery", regex=False)
+        & dataframe["descricao"].str.contains("*", regex=False)
+    ]
+
+    number_of_clients_in_bling = (
+        produtcs_to_count_as_client["quantidade"].sum().astype("int")
+    )
+
+    number_of_in_place_delivery = in_place_delivery["quantidade"].sum().astype("int")
+
+    number_of_third_party_delivery = (
+        third_party_delivery["quantidade"].sum().astype("int")
+    )
+
+    number_of_in_place_meals = (
+        number_of_clients_in_bling
+        - number_of_in_place_delivery
+        - number_of_third_party_delivery
+    )
+
+    return DailyInfo(
+        number_of_clients_in_bling,
+        number_of_in_place_meals,
+        number_of_in_place_delivery,
+        number_of_third_party_delivery,
+        top_seven_by_value,
+        total_sales,
+    )
+
+
+def send_whatsapp_msg(msg_info, search_date_str):
+
+    search_date = datetime.strptime(search_date_str, "%d/%m/%Y").date()
 
     msg = f"""
-No(a) *{handle_week_text(datetime.strftime(msg_info.search_date, '%A'))}* dia *{msg_info.search_date.strftime('%d/%m/%Y')}* vendemos *{msg_info.general_total}* refeições no TOTAL
+No(a) *{handle_week_text(datetime.strftime(search_date, '%A'))}* dia *{search_date.strftime('%d/%m/%Y')}* vendemos *{msg_info.general_total}* refeições no TOTAL
 
 O RECEITA foi de => *{locale.currency(msg_info.total_sales, grouping=True)}*
 
