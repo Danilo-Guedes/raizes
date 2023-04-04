@@ -86,8 +86,13 @@ def api_response_to_list(raw_orders, searched_date):
             )
 
             # print("discount_in_cash", discount_in_cash)
+            for order_itens in order["pedido"][
+                "itens"
+            ]:  # initializing every discout as 0.00
+                order_itens["item"]["desconto"] = "0.00"
 
             for order_itens in order["pedido"]["itens"]:
+
                 # print("no forr =>>", order_itens)
                 final_item_value = float(order_itens["item"]["quantidade"]) * float(
                     order_itens["item"]["valorunidade"]
@@ -96,14 +101,16 @@ def api_response_to_list(raw_orders, searched_date):
                 if final_item_value > discount_in_cash:
                     order_itens["item"]["desconto"] = discount_in_cash
                     break
-                else:
-                    order_itens["item"]["desconto"] = "0.00"
 
-        else:  # zerar valor de desconto pq as vzs vem uns valores estranhos
+        else:  # zerar valor de desconto mesmo qdo o pedido-desconto é 0 mas vem uns valores estranhos de desconto no item
+
             for order_itens in order["pedido"]["itens"]:
                 order_itens["item"]["desconto"] = "0.00"
 
         for product in order["pedido"]["itens"]:
+            # if product["item"]["desconto"] != "0.00":
+            #     print("aqui deu ruim", product)
+
             list_of_products.append(product["item"])
 
     print("Dado Tratado com Sucesso e enviado pra o Pandas fazer sua mágica....")
