@@ -253,8 +253,8 @@ E essa é a tabela dos 7 produtos com maior valor de venda
             msg_input.fill(msg)
             send_btn = page.locator("[aria-label='Enviar']")
             send_btn.click()
+            page.wait_for_timeout(6000)
             print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(2500)
             page.close()
 
     except Exception as Error:
