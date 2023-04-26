@@ -12,9 +12,8 @@ from utils.date_util import weekday_map
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
 
-@st.cache
+@st.cache_data
 def load_data(file):
-
     ## main df
 
     df = pd.read_csv(
