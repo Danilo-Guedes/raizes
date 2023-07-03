@@ -7,14 +7,15 @@ import numpy as np
 from datetime import date
 
 from utils.date_util import weekday_map
+from utils.string_utils import prepare_column_name
+
 
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
 
-@st.cache
+@st.cache_data
 def load_data(file):
-
     ## main df
 
     df = pd.read_csv(
@@ -40,12 +41,12 @@ def load_data(file):
 
     df = df[selected_columns]
 
-    df = df.rename(columns=str.lower)
+    df = df.rename(columns=prepare_column_name)
     df = df.rename(columns={"cliente/fornecedor": "fornecedor"})
     df["tipo"] = df["tipo"].map(lambda tp: "receita" if tp == "C" else "despesa")
 
     df["dia"] = df["data"].dt.day
-    df["mês"] = df["data"].dt.month
+    df["mes"] = df["data"].dt.month
     df["ano"] = df["data"].dt.year
     df["dia_semana"] = df["data"].dt.day_name(locale.getlocale()).astype("category")
 
@@ -88,7 +89,7 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
@@ -102,13 +103,14 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
         )
         .sort_values(by="valor", ascending=False)
     )
+    
 
     income_sum_by_day_df = (
         income_df.groupby("data", as_index=False)
@@ -117,7 +119,7 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
@@ -132,7 +134,7 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
@@ -147,7 +149,7 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
@@ -228,7 +230,7 @@ def load_data(file):
             labels=[
                 "id",
                 "dia",
-                "mês",
+                "mes",
                 "ano",
             ],
             axis="columns",
@@ -259,13 +261,13 @@ def load_data(file):
 
 st.set_page_config(layout="wide")
 
-st.markdown(
-    """
- ### Análise Financeira"""
-)
+
+st.header("Análise Financeira")
+st.divider()
+
 
 uploaded_file = st.file_uploader(
-    label="IMPORTE O EXTRATO NO BLING NO FORMATO CSV",
+    label="Importe o extrato **:green[Financeiro]** no ERP Bling np formato **CSV**",
     key="uploader",
     type=["csv"],
     help="para de ser burro, não tem segredo fazer um upload",
@@ -307,7 +309,7 @@ if uploaded_file is not None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por categoria + (%) <br><br>
@@ -358,7 +360,7 @@ if uploaded_file is not None:
         .configure_text(fontSize=18)
     )
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### <b style='color:#a7c52b'>Receitas</b> por categoria<br><br>
@@ -413,7 +415,7 @@ if uploaded_file is not None:
         .configure_text(fontSize=18)
     )
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### A média de <b style='color:#a7c52b'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias com ocorrências)<br>
@@ -421,7 +423,7 @@ if uploaded_file is not None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana<br><br>
@@ -431,17 +433,17 @@ if uploaded_file is not None:
 
     st.table(income_sum_by_weekday_df)
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#a7c52b'>Receitas</b> por dia do mês<br><br>
+        f""" #### <b style='color:#a7c52b'>Receitas</b> por dia do mes<br><br>
         """,
         unsafe_allow_html=True,
     )
 
     st.table(income_sum_by_day_df)
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### A média de <b style='color:#f19904'>Despesas</b> por dia foi de {locale.currency(expenses_df['valor'].sum() / len(expenses_sum_by_day_df), grouping=True) } (o período teve {len(expenses_sum_by_day_df)} dias com ocorrências)<br>
@@ -449,7 +451,7 @@ if uploaded_file is not None:
         unsafe_allow_html=True,
     )
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
         f""" #### <b style='color:#f19904'>Despesas</b> por dia da semana<br><br>
@@ -459,10 +461,10 @@ if uploaded_file is not None:
 
     st.table(expenses_sum_by_weekday_df)
 
-    st.markdown("***")
+    st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#f19904'>Despesas</b> por dia do mês<br><br>
+        f""" #### <b style='color:#f19904'>Despesas</b> por dia do mes<br><br>
         """,
         unsafe_allow_html=True,
     )

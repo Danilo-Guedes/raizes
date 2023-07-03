@@ -27,8 +27,7 @@ def main():
 
 
 def call_bling_api(date_string):
-
-    endpoint = "https://bling.com.br/Api/v2/pedidos/json/"
+    endpoint = os.getenv("BLING_ORDERS_ENDPOINT")
     api_key = os.getenv("BLING_API_KEY")
     search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
@@ -42,7 +41,6 @@ def call_bling_api(date_string):
         api_return = dict_res.get("retorno")
 
         if api_return.get("erros") is not None:
-
             api_errors = api_return.get("erros")
 
             if type(api_errors) == list:
@@ -71,7 +69,6 @@ def api_response_to_list(raw_orders, searched_date):
     for order in raw_orders:
         # print(f"a ORDERMMMMMM ==> {order}\n\n\n\n")
         if order["pedido"]["desconto"] != "0,00":  # verificando se tem desconto
-
             # print("aqui teve desconto", order["pedido"]["desconto"])
 
             discount_in_cash = float(order["pedido"]["totalprodutos"]) - float(
@@ -85,7 +82,6 @@ def api_response_to_list(raw_orders, searched_date):
                 order_itens["item"]["desconto"] = "0.00"
 
             for order_itens in order["pedido"]["itens"]:
-
                 # print("no forr =>>", order_itens)
                 final_item_value = float(order_itens["item"]["quantidade"]) * float(
                     order_itens["item"]["valorunidade"]
@@ -96,7 +92,6 @@ def api_response_to_list(raw_orders, searched_date):
                     break
 
         else:  # zerar valor de desconto mesmo qdo o pedido-desconto é 0 mas vem uns valores estranhos de desconto no item
-
             for order_itens in order["pedido"]["itens"]:
                 order_itens["item"]["desconto"] = "0.00"
 
@@ -112,12 +107,12 @@ def api_response_to_list(raw_orders, searched_date):
 
 
 def generate_clean_df(prod_list):
-
     df = pd.DataFrame(prod_list)
 
     df = df.drop(
         columns=[
             "un",
+            "codigo",
             "precocusto",
             "descontoItem",
             "pesoBruto",
@@ -144,7 +139,7 @@ def generate_clean_df(prod_list):
         "total": "sum",
     }
 
-    df = df.groupby(df["codigo"]).aggregate(agg_options)
+    df = df.groupby(by="descricao", as_index=False).aggregate(agg_options)
 
     df.to_csv(f"{Path.cwd()}/excel/api.csv", sep=";", decimal=",")
 
@@ -154,7 +149,6 @@ def generate_clean_df(prod_list):
 
 
 def prepare_relevant_info(dataframe):
-
     df_by_value = dataframe.sort_values(by=["total"], ascending=False)
 
     total_sales = round(dataframe["total"].sum(), 2)
@@ -206,7 +200,6 @@ def prepare_relevant_info(dataframe):
 
 
 def send_whatsapp_msg(msg_info, search_date_str):
-
     search_date = datetime.strptime(search_date_str, "%d/%m/%Y").date()
 
     msg = f"""
@@ -253,8 +246,8 @@ E essa é a tabela dos 7 produtos com maior valor de venda
             msg_input.fill(msg)
             send_btn = page.locator("[aria-label='Enviar']")
             send_btn.click()
+            page.wait_for_timeout(6000)
             print("Sucesso!! Mensagem enviada")
-            page.wait_for_timeout(2500)
             page.close()
 
     except Exception as Error:
@@ -262,7 +255,6 @@ E essa é a tabela dos 7 produtos com maior valor de venda
 
 
 def handle_week_text(weekday_text):
-
     if weekday_text in ["segunda", "terça", "quarta", "quinta", "sexta"]:
         return weekday_text + "-feira"
     else:

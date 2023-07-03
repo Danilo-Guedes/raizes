@@ -5,12 +5,15 @@ import locale
 import altair as alt
 import numpy as np
 
+from utils.string_utils import prepare_column_name
+
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
 
-@st.cache
+@st.cache_data
 def load_data(file):
+    ##util_fns
 
     ## main df
 
@@ -37,21 +40,14 @@ def load_data(file):
 
     df = df[selected_columns]
 
-    df = df.rename(columns=str.lower)
-    df = df.rename(
-        columns={
-            "descrição": "descricao",
-            # "preço de custo": "preco_de_custo",
-            "valor total": "valor_total",
-            # "preço unitário": "preco_unitario",
-            # "total dos produtos": "total_dos_produtos",
-        }
-    )
+    df = df.rename(columns=prepare_column_name)
 
     df["dia"] = df["data"].dt.day
     df["mes"] = df["data"].dt.month
     df["ano"] = df["data"].dt.year
     df["dia_semana"] = df["data"].dt.day_name(locale.getlocale())
+    df["num_dia_semana"] = df["data"].dt.weekday
+    df["num_semana"] = df["data"].dt.isocalendar().week.astype(int)
 
     df["data"] = df["data"].dt.date
 
@@ -65,12 +61,7 @@ def load_data(file):
 
     only_meals = (
         df[df["descricao"].str.contains("*", regex=False, na=True)].drop(
-            labels=[
-                "mes",
-                "dia",
-                "ano",
-                "dia_semana",
-            ],
+            labels=["mes", "dia", "ano", "dia_semana", "num_semana", "num_dia_semana"],
             axis="columns",
         )
         # .sum()
@@ -106,6 +97,74 @@ def load_data(file):
         .drop(labels=["mes", "dia", "ano"], axis="columns")
     )
 
+    sales_by_weekday_df = (
+        df.groupby("dia_semana", as_index=False)
+        .sum(numeric_only=True)
+        .sort_values("valor_total", ascending=False)
+    )
+
+    sales_by_date_df = (
+        df.groupby(["num_dia_semana", "dia_semana", "num_semana"], as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "quantidade",
+                "dia",
+                "mes",
+                "ano",
+            ],
+            axis="columns",
+        )
+    ).sort_values("num_dia_semana")
+
+
+    #PIVOT TABLE
+    sales_by_weekday_pivot = pd.pivot_table(
+        data=sales_by_date_df,
+        values="valor_total",
+        index="num_semana",
+        columns="dia_semana",
+        aggfunc="sum",
+        fill_value=0.00,
+        margins=True,
+        margins_name="Total",
+        sort=False,
+    )
+
+
+    sales_by_weekday_pivot.index = sales_by_weekday_pivot.index.astype(str)
+    sales_by_weekday_pivot = sales_by_weekday_pivot.sort_index(ascending=True)
+
+    
+
+    # REMOVING UNNECESSARY COLUMN
+
+    sales_by_weekday_df = sales_by_weekday_df.drop(
+        labels=["dia", "quantidade", "num_semana", "mes", "ano", "num_dia_semana"],
+        axis="columns",
+    )
+
+    ## ADDING PERCENTAGE COLUMN
+    sales_by_weekday_df["percentage"] = sales_by_weekday_df["valor_total"].apply(
+        lambda x: str(round(x / sales_by_weekday_df["valor_total"].sum() * 100, 2))
+        + " %"
+    )
+    # ADDING TOTAL LAST LINE
+    sales_by_weekday_df.loc[len(sales_by_weekday_df)] = [
+        "Total",
+        sales_by_weekday_df["valor_total"].sum(),
+        "100.00 %",
+    ]
+
+    # SET VALUES TO CURRENCY
+
+    sales_by_weekday_df["valor_total"] = sales_by_weekday_df["valor_total"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+    sales_by_weekday_pivot = sales_by_weekday_pivot.applymap(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
     # ## TOPS DFS
 
     top_15_sales_items_by_value = sales_by_item.nlargest(15, "valor_total").assign(
@@ -123,6 +182,7 @@ def load_data(file):
     # )
 
     # print(df.head())
+    # print(df.columns)
     # print(total_sales_sum)
     # print(sales_by_item)
     # print("#" * 99)
@@ -137,6 +197,8 @@ def load_data(file):
     # print(df)
     # print(df.columns)
     # print(df.info())
+    # print(sales_by_weekday_df)
+    # print(sales_by_weekday_pivot)
 
     return (
         df,
@@ -149,19 +211,24 @@ def load_data(file):
         in_place_meals,
         delivery_totals,
         in_place_delivery,
+        sales_by_weekday_df,
+        sales_by_weekday_pivot,
     )
 
 
 st.set_page_config(layout="wide")
 
-st.markdown(
-    """
- ### Análise de Vendas"""
-)
+# st.markdown(
+#     """
+#  ### Análise de Vendas"""
+# )
 # data.dtypes
 
+st.header("Análise de Vendas")
+st.divider()
+
 uploaded_file = st.file_uploader(
-    label="IMPORTE O RELATÓRIO DE VENDAS DO BLING NO FORMATO CSV",
+    label="Importe o relatório de **:green[VENDAS]** do ERP bling no formato **CSV**",
     key="uploader",
     type=["csv"],
     help="para de ser burro, não tem segredo fazer um upload",
@@ -179,6 +246,8 @@ if uploaded_file is not None:
         in_place_meals,
         delivery_totals,
         in_place_delivery,
+        sales_by_weekday_df,
+        sales_by_weekday_pivot,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -316,3 +385,15 @@ if uploaded_file is not None:
             grid=False,
         )
     )
+
+    st.divider()
+
+    st.markdown(
+        f""" #### <b style='color:#a7c52b'>Vendas</b> por dia do mes<br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.table(sales_by_weekday_df)
+
+    st.subheader("Visão de Calendário")
+    st.table(sales_by_weekday_pivot)
