@@ -10,9 +10,12 @@ from datetime import date, datetime
 import locale
 from classes import DailyInfo
 from appdirs import user_config_dir
+from colorama import Fore, init
 
 
 def main():
+    init(autoreset=True)
+
     search_date_str = input("Qual data deseja pesquisar?  : ")
 
     orders = call_bling_api(search_date_str)
@@ -32,21 +35,32 @@ def call_bling_api(date_string):
     search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
     try:
-        r = requests.get(
+        req = requests.get(
             endpoint, params={"apikey": api_key, "filters": search_date_param}
         )
+        # print("a req=>", req)
 
-        dict_res = r.json()
+        dict_res = req.json()
+        # print("o dict_res=>", dict_res)
 
-        api_return = dict_res.get("retorno")
+        if "error" in dict_res:
+            print("AQUI ESTA ENTRANDO SIMMMM")
+            raise requests.HTTPError(dict_res.get("error").get("description"))
+
+        api_return = dict_res.get(
+            "retorno",
+        )
+
+        # print("o retorno =>", dict_res)
 
         if api_return.get("erros") is not None:
             api_errors = api_return.get("erros")
 
             if type(api_errors) == list:
-                print("erro na api ==>>>", api_errors[0]["erro"]["msg"])
+                raise requests.HTTPError(api_errors[0]["erro"]["msg"])
             else:
-                print("erro na api ==>>>", api_errors["erro"]["msg"])
+                raise requests.HTTPError(api_errors["erro"]["msg"])
+
 
         else:
             print("Api do Blig retornou com sucesso!")
@@ -56,7 +70,7 @@ def call_bling_api(date_string):
                 return orders
 
     except Exception as err:
-        print("aqui deu erro", err)
+        print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU => {err}" )
 
 
 def api_response_to_list(raw_orders, searched_date):
