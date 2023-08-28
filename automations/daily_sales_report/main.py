@@ -57,9 +57,10 @@ def call_bling_api(date_string):
             api_errors = api_return.get("erros")
 
             if type(api_errors) == list:
-                print("erro na api ==>>>", api_errors[0]["erro"]["msg"])
+                raise requests.HTTPError(api_errors[0]["erro"]["msg"])
             else:
-                print("erro na api ==>>>", api_errors["erro"]["msg"])
+                raise requests.HTTPError(api_errors["erro"]["msg"])
+
 
         else:
             print("Api do Blig retornou com sucesso!")
