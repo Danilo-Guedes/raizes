@@ -38,10 +38,10 @@ def call_bling_api(date_string):
         req = requests.get(
             endpoint, params={"apikey": api_key, "filters": search_date_param}
         )
-        print("a req=>", req)
+        # print("a req=>", req)
 
         dict_res = req.json()
-        print("o dict_res=>", dict_res)
+        # print("o dict_res=>", dict_res)
 
         if "error" in dict_res:
             print("AQUI ESTA ENTRANDO SIMMMM")
@@ -51,7 +51,7 @@ def call_bling_api(date_string):
             "retorno",
         )
 
-        print("o retorno =>", dict_res)
+        # print("o retorno =>", dict_res)
 
         if api_return.get("erros") is not None:
             api_errors = api_return.get("erros")
