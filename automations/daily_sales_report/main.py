@@ -256,7 +256,7 @@ E essa é a tabela dos 7 produtos com maior valor de venda
             print(f"abrindo {page.title()}")
             page.goto(url, wait_until="domcontentloaded")
             print("WhatsappWeb Acessado com Sucesso!")
-            msg_input = page.locator("div [title='Mensagem']")
+            msg_input = page.locator("div [title='Digite uma mensagem']")
             msg_input.fill(msg)
             send_btn = page.locator("[aria-label='Enviar']")
             send_btn.click()
