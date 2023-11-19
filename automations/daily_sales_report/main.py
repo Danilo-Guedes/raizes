@@ -1,13 +1,16 @@
+import json
+import os
+import locale
+import base64
+
 import requests
 import pyperclip
 from playwright.sync_api import sync_playwright
 import pandas as pd
 from dotenv import load_dotenv
 from tabulate import tabulate
-import os
 from pathlib import Path
-from datetime import date, datetime
-import locale
+from datetime import datetime
 from classes import DailyInfo
 from appdirs import user_config_dir
 from colorama import Fore, init
@@ -61,7 +64,6 @@ def call_bling_api(date_string):
             else:
                 raise requests.HTTPError(api_errors["erro"]["msg"])
 
-
         else:
             print("Api do Blig retornou com sucesso!")
             orders = api_return.get("pedidos")
@@ -70,7 +72,7 @@ def call_bling_api(date_string):
                 return orders
 
     except Exception as err:
-        print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU => {err}" )
+        print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU => {err}")
 
 
 def api_response_to_list(raw_orders, searched_date):
@@ -275,8 +277,92 @@ def handle_week_text(weekday_text):
         return weekday_text
 
 
+def auth():
+    print("auth")
+    # code, state, env = read_config_file()
+    server_init()
+    API_URL = os.getenv("NEW_BLING_API_URL")
+    CLIENT_ID = os.getenv("NEW_BLING_CLIENT_ID")
+    SECRET_KEY = os.getenv("NEW_BLING_SECRET_KEY")
+    AUTH_CODE = os.getenv("NEW_BLING_AUTH_CODE")
+    # SCOPES_CODES = os.getenv("NEW_BLING_SCOPES")
+    # api_key = os.getenv("BLING_API_KEY")
+    params = {
+        "response_type": "code",
+        "client_id": CLIENT_ID,
+        # "state": STATE_CODE,
+        # "scopes": SCOPES_CODES,
+    }
+
+    client_id_in_base64 = base64.b64encode(CLIENT_ID.encode()).decode()
+    secret_key_in_base64 = base64.b64encode(SECRET_KEY.encode()).decode()
+
+    print(client_id_in_base64)
+    print(secret_key_in_base64)
+
+    headers = {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "1.0",
+        "Authorization": f"Basic {client_id_in_base64}:{secret_key_in_base64}",
+    }
+
+    body = {
+        "grant_type": "authorization_code",
+        "code": "7ee8bfef22d1b6f58af66293b75dbd16d222e308",
+    }
+
+    # print(params)
+
+    try:
+        resp = requests.post(f"{API_URL}/oauth/token", headers=headers, data=body)
+
+        # reqtext = resp.text
+        # print("o req=>", resp)
+        # print("o reqtext=>", reqtext)
+        # print("o is_redirect=>", resp.is_redirect)
+        # dict_res = resp.json()
+        # print("o dict_res=>", dict_res)
+
+        print("Request URL:", resp.request.url)
+        print("Request Headers:", resp.request.headers)
+        print("Request Method:", resp.request.method)
+        print("Request Body:", resp.request.body)
+        print("Response Status Code:", resp.status_code)
+        print("Response Content:", resp.text)
+
+        # if "error" in dict_res:
+        #     print("AQUI ESTA ENTRANDO SIMMMM")
+        #     raise requests.HTTPError(dict_res.get("error").get("description"))
+
+        # # api_return = dict_res.get(
+        # #     "retorno",
+        # # )
+
+    except Exception as Error:
+        print(f"aqui deu ruim na chamada nova {Error}")
+
+
+def read_config_file():
+    print("read_config_file")
+    # Load configuration
+    with open("config.json") as config_file:
+        config_data = json.load(config_file)
+
+        # Access values
+        code: str = config_data["oauth"]["code"]
+        state: str = config_data["oauth"]["state"]
+        env: str = config_data["oauth"]["env"]
+
+        return (code, state, env)
+
+
+def server_init():
+    print("server_init")
+
+
 if __name__ == "__main__":
     load_dotenv()
     # setar locale para português
     locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
+    auth()
     main()
