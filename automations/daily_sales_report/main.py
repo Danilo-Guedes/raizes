@@ -37,14 +37,32 @@ def call_bling_api(date_string):
     api_key = os.getenv("BLING_API_KEY")
     search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
 
+    print("date_string", date_string)
+
+    date = datetime.strptime(date_string, '%d/%m/%Y')
+
+    formated_date = date.strftime("%Y-%m-%d")
+
+    params = {
+        "dataInicial": formated_date,
+        "dataFinal": formated_date,
+    }
     try:
-        req = requests.get(
-            endpoint, params={"apikey": api_key, "filters": search_date_param}
-        )
+        access_token, refresh_token = get_access_token()
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+        req = requests.get(endpoint, params=params, headers=headers)
+
+        print("Request URL:", req.request.url)
+        print("Request Headers:", req.request.headers)
+        print("Request Method:", req.request.method)
+        print("Request Body:", req.request.body)
+        print("Response Status Code:", req.status_code)
+        # print("Response Content:", req.text)
         # print("a req=>", req)
 
         dict_res = req.json()
-        # print("o dict_res=>", dict_res)
+        print("o dict_res=>", dict_res)
 
         if "error" in dict_res:
             print("AQUI ESTA ENTRANDO SIMMMM")
@@ -299,16 +317,18 @@ def auth():
 
     print(client_id_in_base64)
     print(secret_key_in_base64)
+    credentials = f"{CLIENT_ID}:{SECRET_KEY}"
+    credentials_in_base_64 = base64.b64encode(credentials.encode()).decode()
 
     headers = {
         "Content-Type": "application/x-www-form-urlencoded",
         "Accept": "1.0",
-        "Authorization": f"Basic {client_id_in_base64}:{secret_key_in_base64}",
+        "Authorization": f"Basic {credentials_in_base_64}",
     }
 
     body = {
         "grant_type": "authorization_code",
-        "code": "7ee8bfef22d1b6f58af66293b75dbd16d222e308",
+        "code": "3376b6870ddb859d3b63a2eb945842f4988a42ed",
     }
 
     # print(params)
@@ -342,18 +362,17 @@ def auth():
         print(f"aqui deu ruim na chamada nova {Error}")
 
 
-def read_config_file():
-    print("read_config_file")
+def get_access_token():
+    print("get_access_token")
     # Load configuration
     with open("config.json") as config_file:
         config_data = json.load(config_file)
 
         # Access values
-        code: str = config_data["oauth"]["code"]
-        state: str = config_data["oauth"]["state"]
-        env: str = config_data["oauth"]["env"]
+        access_token: str = config_data["access_token"]
+        refresh_token: str = config_data["refresh_token"]
 
-        return (code, state, env)
+        return (access_token, refresh_token)
 
 
 def server_init():
@@ -364,5 +383,5 @@ if __name__ == "__main__":
     load_dotenv()
     # setar locale para português
     locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
-    auth()
+    # auth()
     main()
