@@ -15,6 +15,8 @@ from classes import DailyInfo
 from appdirs import user_config_dir
 from colorama import Fore, init
 
+from auth.bling import get_access_data
+from api.bling import refresh_access_data
 
 def main():
     init(autoreset=True)
@@ -39,7 +41,7 @@ def call_bling_api(date_string):
 
     print("date_string", date_string)
 
-    date = datetime.strptime(date_string, '%d/%m/%Y')
+    date = datetime.strptime(date_string, "%d/%m/%Y")
 
     formated_date = date.strftime("%Y-%m-%d")
 
@@ -48,25 +50,31 @@ def call_bling_api(date_string):
         "dataFinal": formated_date,
     }
     try:
-        access_token, refresh_token = get_access_token()
+        access_data = get_access_data()
 
-        headers = {"Authorization": f"Bearer {access_token}"}
-        req = requests.get(endpoint, params=params, headers=headers)
+        headers = {"Authorization": f"Bearer {access_data.get('access_token')}"}
+        resp = requests.get(endpoint, params=params, headers=headers)
 
-        print("Request URL:", req.request.url)
-        print("Request Headers:", req.request.headers)
-        print("Request Method:", req.request.method)
-        print("Request Body:", req.request.body)
-        print("Response Status Code:", req.status_code)
+        print("Request URL:", resp.request.url)
+        print("Request Headers:", resp.request.headers)
+        print("Request Method:", resp.request.method)
+        print("Request Body:", resp.request.body)
+        print("Response Status Code:", resp.status_code)
         # print("Response Content:", req.text)
         # print("a req=>", req)
 
-        dict_res = req.json()
+        dict_res = resp.json()
         print("o dict_res=>", dict_res)
 
         if "error" in dict_res:
             print("AQUI ESTA ENTRANDO SIMMMM")
-            raise requests.HTTPError(dict_res.get("error").get("description"))
+            if resp.status_code == 401:
+                refresh_access_data()
+                # call_bling_api(date_string)
+                print('AQUI PRECISA CHAMAR RECURSIVAMENTE TALVEZ?')
+
+            else:
+                raise requests.HTTPError(dict_res.get("error").get("description"))
 
         api_return = dict_res.get(
             "retorno",
@@ -303,6 +311,9 @@ def auth():
     CLIENT_ID = os.getenv("NEW_BLING_CLIENT_ID")
     SECRET_KEY = os.getenv("NEW_BLING_SECRET_KEY")
     AUTH_CODE = os.getenv("NEW_BLING_AUTH_CODE")
+
+    access_data = get_access_data()
+
     # SCOPES_CODES = os.getenv("NEW_BLING_SCOPES")
     # api_key = os.getenv("BLING_API_KEY")
     params = {
@@ -312,11 +323,7 @@ def auth():
         # "scopes": SCOPES_CODES,
     }
 
-    client_id_in_base64 = base64.b64encode(CLIENT_ID.encode()).decode()
-    secret_key_in_base64 = base64.b64encode(SECRET_KEY.encode()).decode()
 
-    print(client_id_in_base64)
-    print(secret_key_in_base64)
     credentials = f"{CLIENT_ID}:{SECRET_KEY}"
     credentials_in_base_64 = base64.b64encode(credentials.encode()).decode()
 
@@ -326,9 +333,13 @@ def auth():
         "Authorization": f"Basic {credentials_in_base_64}",
     }
 
+    print(credentials_in_base_64)
+
+    return
+
     body = {
         "grant_type": "authorization_code",
-        "code": "3376b6870ddb859d3b63a2eb945842f4988a42ed",
+        "code": AUTH_CODE,
     }
 
     # print(params)
@@ -359,24 +370,14 @@ def auth():
         # # )
 
     except Exception as Error:
-        print(f"aqui deu ruim na chamada nova {Error}")
+        print(f"aqui deu ruim na chamada do auth() {Error}")
 
 
-def get_access_token():
-    print("get_access_token")
-    # Load configuration
-    with open("config.json") as config_file:
-        config_data = json.load(config_file)
-
-        # Access values
-        access_token: str = config_data["access_token"]
-        refresh_token: str = config_data["refresh_token"]
-
-        return (access_token, refresh_token)
 
 
 def server_init():
     print("server_init")
+
 
 
 if __name__ == "__main__":
