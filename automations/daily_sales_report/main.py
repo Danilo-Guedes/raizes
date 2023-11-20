@@ -1,4 +1,3 @@
-import json
 import os
 import locale
 import base64
@@ -16,16 +15,23 @@ from appdirs import user_config_dir
 from colorama import Fore, init
 
 from auth.bling import get_access_data
-from api.bling import refresh_access_data
+from api.bling import refresh_access_data, get_sales_by_date, get_sale_by_id
+
 
 def main():
     init(autoreset=True)
 
     search_date_str = input("Qual data deseja pesquisar?  : ")
 
-    orders = call_bling_api(search_date_str)
+    sales = call_bling_api(search_date_str)
+    print('sales: ', sales)
+    # print("as keys da order: ", sales[0].keys())
+    # print("a primeira order: ", sales[0])
+    # print("o tamanho da lista", len(sales))
 
-    products_list = api_response_to_list(orders, search_date_str)
+    
+
+    products_list = api_response_to_list(sales, search_date_str)
 
     clean_df = generate_clean_df(products_list)
 
@@ -35,70 +41,25 @@ def main():
 
 
 def call_bling_api(date_string):
-    endpoint = os.getenv("BLING_ORDERS_ENDPOINT")
-    api_key = os.getenv("BLING_API_KEY")
-    search_date_param = f"dataEmissao[{date_string} TO {date_string}]"
-
-    print("date_string", date_string)
-
-    date = datetime.strptime(date_string, "%d/%m/%Y")
-
-    formated_date = date.strftime("%Y-%m-%d")
-
-    params = {
-        "dataInicial": formated_date,
-        "dataFinal": formated_date,
-    }
     try:
-        access_data = get_access_data()
+        resp = get_sales_by_date(date_string)
 
-        headers = {"Authorization": f"Bearer {access_data.get('access_token')}"}
-        resp = requests.get(endpoint, params=params, headers=headers)
+        sales_ids = [item.get("id") for item in resp]
+        # print("the idssss", sales_ids)
 
-        print("Request URL:", resp.request.url)
-        print("Request Headers:", resp.request.headers)
-        print("Request Method:", resp.request.method)
-        print("Request Body:", resp.request.body)
-        print("Response Status Code:", resp.status_code)
-        # print("Response Content:", req.text)
-        # print("a req=>", req)
+        final_data = []
 
-        dict_res = resp.json()
-        print("o dict_res=>", dict_res)
+        for id in sales_ids:
+            resp = get_sale_by_id(id)
 
-        if "error" in dict_res:
-            print("AQUI ESTA ENTRANDO SIMMMM")
-            if resp.status_code == 401:
-                refresh_access_data()
-                # call_bling_api(date_string)
-                print('AQUI PRECISA CHAMAR RECURSIVAMENTE TALVEZ?')
+            final_data.append(resp)
 
-            else:
-                raise requests.HTTPError(dict_res.get("error").get("description"))
+        # print("final_data: ", final_data)
 
-        api_return = dict_res.get(
-            "retorno",
-        )
-
-        # print("o retorno =>", dict_res)
-
-        if api_return.get("erros") is not None:
-            api_errors = api_return.get("erros")
-
-            if type(api_errors) == list:
-                raise requests.HTTPError(api_errors[0]["erro"]["msg"])
-            else:
-                raise requests.HTTPError(api_errors["erro"]["msg"])
-
-        else:
-            print("Api do Blig retornou com sucesso!")
-            orders = api_return.get("pedidos")
-
-            if orders is not None:
-                return orders
+        return final_data
 
     except Exception as err:
-        print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU => {err}")
+        print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU em call_bling_api=> {err}")
 
 
 def api_response_to_list(raw_orders, searched_date):
@@ -307,9 +268,9 @@ def auth():
     print("auth")
     # code, state, env = read_config_file()
     server_init()
-    API_URL = os.getenv("NEW_BLING_API_URL")
-    CLIENT_ID = os.getenv("NEW_BLING_CLIENT_ID")
-    SECRET_KEY = os.getenv("NEW_BLING_SECRET_KEY")
+    API_URL = os.getenv("BLING_API_URL")
+    CLIENT_ID = os.getenv("BLING_CLIENT_ID")
+    SECRET_KEY = os.getenv("BLING_SECRET_KEY")
     AUTH_CODE = os.getenv("NEW_BLING_AUTH_CODE")
 
     access_data = get_access_data()
@@ -322,7 +283,6 @@ def auth():
         # "state": STATE_CODE,
         # "scopes": SCOPES_CODES,
     }
-
 
     credentials = f"{CLIENT_ID}:{SECRET_KEY}"
     credentials_in_base_64 = base64.b64encode(credentials.encode()).decode()
@@ -373,11 +333,8 @@ def auth():
         print(f"aqui deu ruim na chamada do auth() {Error}")
 
 
-
-
 def server_init():
     print("server_init")
-
 
 
 if __name__ == "__main__":

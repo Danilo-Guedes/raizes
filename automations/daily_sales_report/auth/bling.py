@@ -5,7 +5,6 @@ from mytypes.bling import Access_Data
 def get_json_file_path():
     project_root = os.path.dirname(os.path.abspath(os.path.join(__file__, "..")))  # Go up one directory
     access_data_path = os.path.join(project_root, "access_data.json")
-    print(access_data_path)
     return access_data_path
 
 
