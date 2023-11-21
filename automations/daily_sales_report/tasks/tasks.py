@@ -12,12 +12,15 @@ from appdirs import user_config_dir
 
 from api.bling import  get_sales_by_date, get_sale_by_id
 from utils.strings import handle_week_text
+from auth.bling import get_access_data
 from classes import DailyInfo
 
 
 
 def call_bling_api(date_string):
     try:
+
+
         resp = get_sales_by_date(date_string)
 
         sales_ids = [item.get("id") for item in resp]
@@ -29,8 +32,12 @@ def call_bling_api(date_string):
 
         final_data = []
 
+
+        access_data = get_access_data() # getting fresh access data if needed
+
+
         for id in sales_ids:
-            resp = get_sale_by_id(id)
+            resp = get_sale_by_id(id, access_data)
 
             final_data.append(resp)
 
