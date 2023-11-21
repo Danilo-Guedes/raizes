@@ -2,9 +2,9 @@ import os
 import base64
 import requests
 from datetime import datetime
-from auth.bling import get_access_data, update_access_data
-
 from colorama import Fore, init
+from auth.bling import get_access_data, update_access_data
+from typehints.bling import Access_Data
 
 
 def get_sales_by_date(date_string: str):
@@ -50,10 +50,9 @@ def get_sales_by_date(date_string: str):
         print(Fore.RED + f"OPA!!, ALGUM ERRO OCORREU em get_sales_by_date=> {err}")
 
 
-def get_sale_by_id(sale_id: str):
+def get_sale_by_id(sale_id: str, access_data: Access_Data):
     try:
         endpoint = os.getenv("BLING_SALES_BY_DATE_API_URL")
-        access_data = get_access_data()
 
         headers = {"Authorization": f"Bearer {access_data.get('access_token')}"}
 
