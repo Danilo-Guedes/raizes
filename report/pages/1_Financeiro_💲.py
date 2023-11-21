@@ -62,6 +62,8 @@ def load_data(file):
         categoria=df["categoria"].astype("category"),
     )
 
+    empty_category = df["categoria"].isna()
+    df.loc[empty_category, "categoria"] = "Sem Categoria #v"
     ## end-main df cleanup and enhancements
 
     ## remove ! symbols
