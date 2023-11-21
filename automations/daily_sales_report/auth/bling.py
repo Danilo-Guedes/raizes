@@ -9,7 +9,7 @@ def get_json_file_path():
 
 
 def get_access_data():
-    print("get_access_token")
+    # print("get_access_token")
 
     # Load configuration
     with open(get_json_file_path()) as config_file:

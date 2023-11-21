@@ -47,6 +47,8 @@ def call_bling_api(date_string):
         sales_ids = [item.get("id") for item in resp]
         # print("the idssss", sales_ids)
 
+        print(f"Foram identificadas {len(sales_ids)} ocorrências de vendas, e serão requisitadas individualmente...")
+
         final_data = []
 
         for id in sales_ids:
