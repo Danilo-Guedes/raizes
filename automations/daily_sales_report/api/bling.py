@@ -56,7 +56,7 @@ def get_sale_by_id(sale_id: str, access_data: Access_Data):
 
         headers = {"Authorization": f"Bearer {access_data.get('access_token')}"}
 
-        print(f"requesting data for id:{sale_id}")
+        # print(f"requesting data for id:{sale_id}")
 
         resp = requests.get(endpoint + f"/{sale_id}", headers=headers)
 
@@ -80,7 +80,7 @@ def get_sale_by_id(sale_id: str, access_data: Access_Data):
 
 
 def refresh_access_data():
-    print("CHAMOU O refresh_access_data")
+    # print("CHAMOU O refresh_access_data")
     API_URL = os.getenv("BLING_API_URL")
     CLIENT_ID = os.getenv("BLING_CLIENT_ID")
     SECRET_KEY = os.getenv("BLING_SECRET_KEY")

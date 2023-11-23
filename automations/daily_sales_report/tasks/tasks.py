@@ -9,6 +9,7 @@ from tabulate import tabulate
 from pathlib import Path
 from datetime import datetime
 from appdirs import user_config_dir
+from tqdm import tqdm
 
 from api.bling import  get_sales_by_date, get_sale_by_id
 from utils.strings import handle_week_text
@@ -36,7 +37,7 @@ def call_bling_api(date_string):
         access_data = get_access_data() # getting fresh access data if needed
 
 
-        for id in sales_ids:
+        for id in tqdm(sales_ids, desc="Requisitando os detalhes das vendas..."):
             resp = get_sale_by_id(id, access_data)
 
             final_data.append(resp)
