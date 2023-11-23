@@ -107,7 +107,7 @@ def refresh_access_data():
         response = requests.post(f"{API_URL}/oauth/token", headers=headers, data=body)
         resp = response.json()
 
-        print("o dict_res=>", resp)
+        # print("o dict_res=>", resp)
 
         if "error" in resp:
             print("AQUI ESTA ENTRANDO SIMMMM")
