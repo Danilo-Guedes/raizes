@@ -12,7 +12,6 @@ from tasks.tasks import (
 
 
 def main():
-    init(autoreset=True)
     search_date_str = input("Qual data deseja pesquisar?  : ")
     sales = call_bling_api(search_date_str)
     products_list = api_response_to_list(sales)
@@ -23,6 +22,8 @@ def main():
 
 if __name__ == "__main__":
     load_dotenv()
+    init(autoreset=True)
     # setar locale para português
     locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
+    
     main()
