@@ -163,6 +163,11 @@ def load_data(file):
         .sort_values(by="valor", ascending=False)
     )
 
+    supplier_expenses_counts = expenses_df.groupby('fornecedor').size().reset_index(name='count').sort_values(by="count", ascending=False)
+
+
+
+
     ## ADDING DAYWEEK COLUMN
 
     income_sum_by_day_df["dia_semana"] = income_sum_by_day_df["data"].apply(
@@ -234,12 +239,16 @@ def load_data(file):
         .assign(position=range(10))
     )
 
+    supplier_to_exclude = ["GABRIELA RUSSI ZAMBONI", "DANILO PAZ GUEDES DE FREITAS", "DANILO BALDARENA FRANZA", "ADRIELLE BORSARINI RIBEIRO", "FERNANDO CARRIÃO"]
+
     top10_exp_df_by_supplier = (
-        expenses_sum_by_supplier.nlargest(10, "valor")
+        expenses_sum_by_supplier[~expenses_sum_by_supplier['fornecedor'].isin(supplier_to_exclude)]
+        .nlargest(10, "valor")
         .sort_values(by="valor", ascending=False)
         .assign(position=range(1, 11))
     )
 
+    top_10_supplier_expenses_counts = supplier_expenses_counts.nlargest(10, "count")
     # SET VALUES TO CURRENCY
 
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
@@ -275,6 +284,7 @@ def load_data(file):
         expenses_sum_by_day_df,
         expenses_sum_by_supplier,
         top10_exp_df_by_supplier,
+        top_10_supplier_expenses_counts
     )
 
 
@@ -306,6 +316,7 @@ if uploaded_file is not None:
         expenses_sum_by_day_df,
         expenses_sum_by_supplier,
         top10_exp_df_by_supplier,
+        top_10_supplier_expenses_counts
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -533,3 +544,11 @@ if uploaded_file is not None:
         # .configure_view(stroke=None, clip=False)
         use_container_width=True,
     )
+
+    st.divider()
+
+    st.subheader(
+        "10 maiores Fornecedores por ocorrências"
+    )
+
+    st.dataframe(top_10_supplier_expenses_counts)
