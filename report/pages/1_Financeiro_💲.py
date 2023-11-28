@@ -10,7 +10,6 @@ from utils.date_util import weekday_map
 from utils.string_utils import prepare_column_name
 
 
-
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
 
 
@@ -103,7 +102,6 @@ def load_data(file):
         )
         .sort_values(by="valor", ascending=False)
     )
-    
 
     income_sum_by_day_df = (
         income_df.groupby("data", as_index=False)
@@ -137,6 +135,21 @@ def load_data(file):
 
     expenses_sum_by_day_df = (
         expenses_df.groupby("data", as_index=False)
+        .sum(numeric_only=True)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mes",
+                "ano",
+            ],
+            axis="columns",
+        )
+        .sort_values(by="valor", ascending=False)
+    )
+
+    expenses_sum_by_supplier = (
+        expenses_df.groupby("fornecedor", as_index=False)
         .sum(numeric_only=True)
         .drop(
             labels=[
@@ -186,29 +199,12 @@ def load_data(file):
         "100.00 %",
     ]
 
-    # SET VALUES TO CURRENCY
-
-    income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
-        lambda x: locale.currency(x, grouping=True)
-    )
-
-    income_sum_by_day_df["valor"] = income_sum_by_day_df["valor"].apply(
-        lambda x: locale.currency(x, grouping=True)
-    )
-
-    expenses_sum_by_weekday_df["valor"] = expenses_sum_by_weekday_df["valor"].apply(
-        lambda x: locale.currency(x, grouping=True)
-    )
-
-    expenses_sum_by_day_df["valor"] = expenses_sum_by_day_df["valor"].apply(
-        lambda x: locale.currency(x, grouping=True)
-    )
-
     ## RESETING INDEXES AND POSITION COLUMN
 
     income_sum_by_weekday_df.reset_index(drop=True, inplace=True)
     income_sum_by_day_df.reset_index(drop=True, inplace=True)
     expenses_sum_by_day_df.reset_index(drop=True, inplace=True)
+    expenses_sum_by_supplier.reset_index(drop=True, inplace=True)
 
     income_by_category_df = income_by_category_df.sort_values(
         by="valor", ascending=False
@@ -238,6 +234,34 @@ def load_data(file):
         .assign(position=range(10))
     )
 
+    top10_exp_df_by_supplier = (
+        expenses_sum_by_supplier.nlargest(10, "valor")
+        .sort_values(by="valor", ascending=False)
+        .assign(position=range(1,11))
+    )
+
+    # SET VALUES TO CURRENCY
+
+    income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    income_sum_by_day_df["valor"] = income_sum_by_day_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    expenses_sum_by_weekday_df["valor"] = expenses_sum_by_weekday_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    expenses_sum_by_day_df["valor"] = expenses_sum_by_day_df["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
+    expenses_sum_by_supplier["valor"] = expenses_sum_by_supplier["valor"].apply(
+        lambda x: locale.currency(x, grouping=True)
+    )
+
     return (
         df,
         income_df,
@@ -249,6 +273,8 @@ def load_data(file):
         income_sum_by_day_df,
         expenses_sum_by_weekday_df,
         expenses_sum_by_day_df,
+        expenses_sum_by_supplier,
+        top10_exp_df_by_supplier,
     )
 
 
@@ -278,6 +304,8 @@ if uploaded_file is not None:
         income_sum_by_day_df,
         expenses_sum_by_weekday_df,
         expenses_sum_by_day_df,
+        expenses_sum_by_supplier,
+        top10_exp_df_by_supplier,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -436,3 +464,18 @@ if uploaded_file is not None:
     )
 
     st.table(expenses_sum_by_day_df)
+
+    st.divider()
+
+    st.markdown(
+        f""" #### Análise <b style='color:#f19904'>Fornecedores</b><br><br>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.subheader(
+        "Maiores Fornecedores por Valor R$",
+    )
+
+    st.dataframe(expenses_sum_by_supplier)
+    st.dataframe(top10_exp_df_by_supplier)
