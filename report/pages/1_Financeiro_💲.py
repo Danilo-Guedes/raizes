@@ -237,7 +237,7 @@ def load_data(file):
     top10_exp_df_by_supplier = (
         expenses_sum_by_supplier.nlargest(10, "valor")
         .sort_values(by="valor", ascending=False)
-        .assign(position=range(1,11))
+        .assign(position=range(1, 11))
     )
 
     # SET VALUES TO CURRENCY
@@ -474,8 +474,62 @@ if uploaded_file is not None:
     )
 
     st.subheader(
-        "Maiores Fornecedores por Valor R$",
+        "10 maiores Fornecedores por Valor R$",
     )
 
     st.dataframe(expenses_sum_by_supplier)
     st.dataframe(top10_exp_df_by_supplier)
+
+    top10_expenses_by_supplier = (
+        alt.Chart(top10_exp_df_by_supplier)
+        .mark_bar()
+        .encode(
+            alt.Y(
+                "fornecedor:N",
+                sort=alt.EncodingSortField("valor", op="max", order="descending"),
+                axis=alt.Axis(title=""),
+            ),
+            alt.X(
+                "valor:Q",
+                axis=alt.Axis(
+                    title="R$ Valor",
+                    titlePadding=15,
+                    format="$,.2f",
+                ),
+
+            ),
+            color=alt.condition(
+                alt.datum.position < 3,
+                alt.value("#f19904"),
+                alt.value("lightgray"),  ## higlight only top 3 expenses
+            ),
+        )
+        .properties(height=500)
+    )
+
+    label_top10_expenses_by_supplier = (
+        top10_expenses_by_supplier.mark_text(
+            align="left",
+            baseline="middle",
+            dx=20,  # Nudges text to right so it doesn't appear on top of the bar
+            fontSize=18,
+            # xOffset=20
+            
+            
+        ).encode(text=alt.Text("valor:Q", format="$,.2f"))
+        # .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
+    )
+
+    st.altair_chart(
+        (top10_expenses_by_supplier + label_top10_expenses_by_supplier).configure_axis(
+            labelFontSize=16,
+            titleFontSize=20,
+            titleColor="#f19904",
+            grid=False,
+            # labelAlign="right"
+          
+        
+        ),
+        # .configure_view(stroke=None, clip=False)
+        use_container_width=True,
+    )
