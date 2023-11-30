@@ -163,10 +163,12 @@ def load_data(file):
         .sort_values(by="valor", ascending=False)
     )
 
-    supplier_expenses_counts = expenses_df.groupby('fornecedor').size().reset_index(name='count').sort_values(by="count", ascending=False)
-
-
-
+    supplier_expenses_counts = (
+        expenses_df.groupby("fornecedor")
+        .size()
+        .reset_index(name="count")
+        .sort_values(by="count", ascending=False)
+    )
 
     ## ADDING DAYWEEK COLUMN
 
@@ -233,22 +235,30 @@ def load_data(file):
 
     ## TOPS DFS
 
-    top10_exp_df = (
-        expenses_by_category_df.nlargest(10, "valor")
+    top15_exp_df = (
+        expenses_by_category_df.nlargest(15, "valor")
         .sort_values(by="valor", ascending=False)
-        .assign(position=range(10))
+        .assign(position=range(15))
     )
 
-    supplier_to_exclude = ["GABRIELA RUSSI ZAMBONI", "DANILO PAZ GUEDES DE FREITAS", "DANILO BALDARENA FRANZA", "ADRIELLE BORSARINI RIBEIRO", "FERNANDO CARRIÃO"]
+    supplier_to_exclude = [
+        "GABRIELA RUSSI ZAMBONI",
+        "DANILO PAZ GUEDES DE FREITAS",
+        "DANILO BALDARENA FRANZA",
+        "ADRIELLE BORSARINI RIBEIRO",
+        "FERNANDO CARRIÃO",
+    ]
 
-    top10_exp_df_by_supplier = (
-        expenses_sum_by_supplier[~expenses_sum_by_supplier['fornecedor'].isin(supplier_to_exclude)]
-        .nlargest(10, "valor")
+    top15_exp_df_by_supplier = (
+        expenses_sum_by_supplier[
+            ~expenses_sum_by_supplier["fornecedor"].isin(supplier_to_exclude)
+        ]
+        .nlargest(15, "valor")
         .sort_values(by="valor", ascending=False)
-        .assign(position=range(1, 11))
+        .assign(position=range(15))
     )
 
-    top_10_supplier_expenses_counts = supplier_expenses_counts.nlargest(10, "count")
+    top_15_supplier_expenses_counts = supplier_expenses_counts.nlargest(15, "count")
     # SET VALUES TO CURRENCY
 
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
@@ -277,14 +287,14 @@ def load_data(file):
         expenses_df,
         income_by_category_df,
         expenses_by_category_df,
-        top10_exp_df,
+        top15_exp_df,
         income_sum_by_weekday_df,
         income_sum_by_day_df,
         expenses_sum_by_weekday_df,
         expenses_sum_by_day_df,
         expenses_sum_by_supplier,
-        top10_exp_df_by_supplier,
-        top_10_supplier_expenses_counts
+        top15_exp_df_by_supplier,
+        top_15_supplier_expenses_counts,
     )
 
 
@@ -309,14 +319,14 @@ if uploaded_file is not None:
         expenses_df,
         income_by_category_df,
         expenses_by_category_df,
-        top10_exp_df,
+        top15_exp_df,
         income_sum_by_weekday_df,
         income_sum_by_day_df,
         expenses_sum_by_weekday_df,
         expenses_sum_by_day_df,
         expenses_sum_by_supplier,
-        top10_exp_df_by_supplier,
-        top_10_supplier_expenses_counts
+        top15_exp_df_by_supplier,
+        top_15_supplier_expenses_counts,
     ) = load_data(uploaded_file)
 
     st.balloons()
@@ -344,24 +354,24 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### Top 10  <b style='color:#f19904'>Despesas</b> por categoria + (%) <br><br>
+        f""" #### Top 15  <b style='color:#f19904'>Despesas</b> por categoria + (%) <br><br>
         """,
         unsafe_allow_html=True,
     )
 
-    top10_expenses = (
-        alt.Chart(top10_exp_df)
+    top15_exp_df = (
+        alt.Chart(top15_exp_df)
         .mark_bar()
         .encode(
             alt.Y(
                 "categoria:N",
                 sort=alt.EncodingSortField("value", op="max", order="descending"),
-                axis=alt.Axis(title=""),
+                axis=alt.Axis(title=None),
             ),
             alt.X(
                 "valor:Q",
                 axis=alt.Axis(
-                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=5000
+                    title="R$ Valor", titlePadding=15, format="$,.2f", tickMinStep=1000
                 ),
             ),
             color=alt.condition(
@@ -370,23 +380,25 @@ if uploaded_file is not None:
                 alt.value("lightgray"),  ## higlight only top 3 expenses
             ),
         )
-        .properties(width=1400, height=500)
+        .properties(height=900)
     )
 
     label_top10_expenses = (
-        top10_expenses.mark_text(
-            align="left",
+        top15_exp_df.mark_text(
+            align="right",
             baseline="middle",
-            dx=15,  # Nudges text to right so it doesn't appear on top of the bar
+            fontSize=20,
+            fontWeight=600,
         )
-        .encode(text=alt.Text("percentage:Q", format=".2%"))
+        .encode(text=alt.Text("percentage:Q", format=".2%"), color=alt.value("white"))
         .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
     )
 
     st.altair_chart(
-        (top10_expenses + label_top10_expenses).configure_axis(
+        (top15_exp_df + label_top10_expenses).configure_axis(
             labelFontSize=16, titleFontSize=20, titleColor="#f19904", grid=False
-        )
+        ),
+        use_container_width=True,
     )
 
     st.divider()
@@ -401,7 +413,7 @@ if uploaded_file is not None:
         alt.Chart(income_by_category_df)
         .mark_bar()
         .encode(
-            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title="")),
+            alt.Y("categoria:N", sort="-x", axis=alt.Axis(title=None)),
             alt.X(
                 "valor:Q",
                 axis=alt.Axis(
@@ -414,10 +426,11 @@ if uploaded_file is not None:
                 alt.value("lightgray"),  ## higlight only top 3 expenses
             ),
         )
-        .properties(width=1400, height=350)
+        .properties(height=350)
         .configure_axis(
             labelFontSize=16, titleFontSize=20, titleColor="#a7c52b", grid=False
-        )
+        ),
+        use_container_width=True,
     )
 
     st.divider()
@@ -479,7 +492,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### Análise <b style='color:#f19904'>Fornecedores</b><br><br>
+        f""" ## Análise <b style='color:#f19904'>Fornecedores</b><br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -488,17 +501,14 @@ if uploaded_file is not None:
         "10 maiores Fornecedores por Valor R$",
     )
 
-    st.dataframe(expenses_sum_by_supplier)
-    st.dataframe(top10_exp_df_by_supplier)
-
     top10_expenses_by_supplier = (
-        alt.Chart(top10_exp_df_by_supplier)
+        alt.Chart(top15_exp_df_by_supplier)
         .mark_bar()
         .encode(
             alt.Y(
                 "fornecedor:N",
                 sort=alt.EncodingSortField("valor", op="max", order="descending"),
-                axis=alt.Axis(title=""),
+                axis=alt.Axis(title=None),
             ),
             alt.X(
                 "valor:Q",
@@ -507,7 +517,6 @@ if uploaded_file is not None:
                     titlePadding=15,
                     format="$,.2f",
                 ),
-
             ),
             color=alt.condition(
                 alt.datum.position < 3,
@@ -515,19 +524,16 @@ if uploaded_file is not None:
                 alt.value("lightgray"),  ## higlight only top 3 expenses
             ),
         )
-        .properties(height=500)
+        .properties(height=900)
     )
 
     label_top10_expenses_by_supplier = (
         top10_expenses_by_supplier.mark_text(
-            align="left",
+            align="right",
             baseline="middle",
-            dx=20,  # Nudges text to right so it doesn't appear on top of the bar
-            fontSize=18,
-            # xOffset=20
-            
-            
-        ).encode(text=alt.Text("valor:Q", format="$,.2f"))
+            fontSize=24,
+            fontWeight=600,
+        ).encode(text=alt.Text("valor:Q", format="$,.2f"), color=alt.value("white"))
         # .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
     )
 
@@ -538,8 +544,6 @@ if uploaded_file is not None:
             titleColor="#f19904",
             grid=False,
             # labelAlign="right"
-          
-        
         ),
         # .configure_view(stroke=None, clip=False)
         use_container_width=True,
@@ -547,8 +551,6 @@ if uploaded_file is not None:
 
     st.divider()
 
-    st.subheader(
-        "10 maiores Fornecedores por ocorrências"
-    )
+    st.subheader("15 maiores Fornecedores por ocorrências")
 
-    st.dataframe(top_10_supplier_expenses_counts)
+    st.dataframe(top_15_supplier_expenses_counts)
