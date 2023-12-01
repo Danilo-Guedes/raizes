@@ -8,6 +8,7 @@ from datetime import date
 
 from utils.date_util import weekday_map
 from utils.string_utils import prepare_column_name
+from config import colors
 
 
 locale.setlocale(locale.LC_ALL, "pt_BR.utf8")
@@ -258,7 +259,9 @@ def load_data(file):
         .assign(position=range(15))
     )
 
-    top_15_supplier_expenses_counts = supplier_expenses_counts.nlargest(15, "count")
+    top_15_supplier_expenses_counts = supplier_expenses_counts.nlargest(
+        15, "count"
+    ).assign(position=range(15))
     # SET VALUES TO CURRENCY
 
     income_sum_by_weekday_df["valor"] = income_sum_by_weekday_df["valor"].apply(
@@ -338,23 +341,23 @@ if uploaded_file is not None:
         st.dataframe(data)
 
     st.markdown(
-        f""" #### <br> O total de <b style='color:#a7c52b'>Receitas</b> do período foi de <b style='color:#a7c52b;'>{locale.currency(income_df['valor'].sum(), grouping=True)}</b>""",
+        f""" #### <br> O total de <b style='color:{colors.light_green}'>Receitas</b> do período foi de <b style='color:{colors.light_green};'>{locale.currency(income_df['valor'].sum(), grouping=True)}</b>""",
         unsafe_allow_html=True,
     )
 
     st.markdown(
-        f""" #### O total de <b style='color:#f19904'>Despesas</b> do período foi de <b style='color:#f19904'>{locale.currency(expenses_df['valor'].sum(), grouping=True)}</b>""",
+        f""" #### O total de <b style='color:{colors.orange}'>Despesas</b> do período foi de <b style='color:{colors.orange}'>{locale.currency(expenses_df['valor'].sum(), grouping=True)}</b>""",
         unsafe_allow_html=True,
     )
     st.markdown(
-        f""" ##### O resultado bruto (rec - des) foi de <b style='color:#003400;font-size:26px;text-decoration:underline;'>{locale.currency(income_df['valor'].sum() - expenses_df['valor'].sum(), grouping=True)}</b>.<br>""",
+        f""" ##### O resultado bruto (rec - des) foi de <b style='color:{colors.dark_green};font-size:26px;text-decoration:underline;'>{locale.currency(income_df['valor'].sum() - expenses_df['valor'].sum(), grouping=True)}</b>.<br>""",
         unsafe_allow_html=True,
     )
 
     st.divider()
 
     st.markdown(
-        f""" #### Top 15  <b style='color:#f19904'>Despesas</b> por categoria + (%) <br><br>
+        f""" #### Top 15  <b style='color:{colors.orange}'>Despesas</b> por categoria + (%) <br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -376,8 +379,8 @@ if uploaded_file is not None:
             ),
             color=alt.condition(
                 alt.datum.position < 3,
-                alt.value("#f19904"),
-                alt.value("lightgray"),  ## higlight only top 3 expenses
+                alt.value(colors.orange),
+                alt.value(colors.light_gray),  ## higlight only top 3 expenses
             ),
         )
         .properties(height=900)
@@ -390,13 +393,15 @@ if uploaded_file is not None:
             fontSize=20,
             fontWeight=600,
         )
-        .encode(text=alt.Text("percentage:Q", format=".2%"), color=alt.value("white"))
+        .encode(
+            text=alt.Text("percentage:Q", format=".2%"), color=alt.value(colors.white)
+        )
         .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
     )
 
     st.altair_chart(
         (top15_exp_df + label_top10_expenses).configure_axis(
-            labelFontSize=16, titleFontSize=20, titleColor="#f19904", grid=False
+            labelFontSize=16, titleFontSize=20, titleColor=colors.orange, grid=False
         ),
         use_container_width=True,
     )
@@ -404,7 +409,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#a7c52b'>Receitas</b> por categoria<br><br>
+        f""" #### <b style='color:{colors.light_green}'>Receitas</b> por categoria<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -421,22 +426,20 @@ if uploaded_file is not None:
                 ),
             ),
             color=alt.condition(
-                alt.datum.position == 0,
-                alt.value("#a7c52b"),
-                alt.value("lightgray"),  ## higlight only top 3 expenses
+                alt.datum.position == 0,  ## higlight only top expense
+                alt.value(colors.light_green),
+                alt.value(colors.light_gray),
             ),
         )
         .properties(height=350)
-        .configure_axis(
-            labelFontSize=16, titleFontSize=20, titleColor="#a7c52b", grid=False
-        ),
+        .configure_axis(labelFontSize=16, titleFontSize=20, grid=False),
         use_container_width=True,
     )
 
     st.divider()
 
     st.markdown(
-        f""" #### A média de <b style='color:#a7c52b'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias com ocorrências)<br>
+        f""" #### A média de <b style='color:{colors.light_green}'>Repasse</b> por dia foi de {locale.currency(income_df['valor'].sum() / len(income_sum_by_day_df), grouping=True) } (o período teve {len(income_sum_by_day_df)} dias com ocorrências)<br>
         """,
         unsafe_allow_html=True,
     )
@@ -444,7 +447,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#a7c52b'>Repasse</b> por dia da semana<br><br>
+        f""" #### <b style='color:{colors.light_green}'>Repasse</b> por dia da semana<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -454,7 +457,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#a7c52b'>Receitas</b> por dia do mes<br><br>
+        f""" #### <b style='color:{colors.light_green}'>Receitas</b> por dia do mes<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -464,7 +467,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### A média de <b style='color:#f19904'>Despesas</b> por dia foi de {locale.currency(expenses_df['valor'].sum() / len(expenses_sum_by_day_df), grouping=True) } (o período teve {len(expenses_sum_by_day_df)} dias com ocorrências)<br>
+        f""" #### A média de <b style='color:{colors.orange}'>Despesas</b> por dia foi de {locale.currency(expenses_df['valor'].sum() / len(expenses_sum_by_day_df), grouping=True) } (o período teve {len(expenses_sum_by_day_df)} dias com ocorrências)<br>
         """,
         unsafe_allow_html=True,
     )
@@ -472,7 +475,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#f19904'>Despesas</b> por dia da semana<br><br>
+        f""" #### <b style='color:{colors.orange}'>Despesas</b> por dia da semana<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -482,7 +485,7 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" #### <b style='color:#f19904'>Despesas</b> por dia do mes<br><br>
+        f""" #### <b style='color:{colors.orange}'>Despesas</b> por dia do mes<br><br>
         """,
         unsafe_allow_html=True,
     )
@@ -492,13 +495,13 @@ if uploaded_file is not None:
     st.divider()
 
     st.markdown(
-        f""" ## Análise <b style='color:#f19904'>Fornecedores</b><br><br>
+        f""" ## Análise <b style='color:{colors.orange}'>Fornecedores</b><br><br>
         """,
         unsafe_allow_html=True,
     )
 
     st.subheader(
-        "10 maiores Fornecedores por Valor R$",
+        "15 maiores Fornecedores por Valor R$",
     )
 
     top10_expenses_by_supplier = (
@@ -520,8 +523,8 @@ if uploaded_file is not None:
             ),
             color=alt.condition(
                 alt.datum.position < 3,
-                alt.value("#f19904"),
-                alt.value("lightgray"),  ## higlight only top 3 expenses
+                alt.value(colors.orange),
+                alt.value(colors.light_gray),  ## higlight only top 3 expenses
             ),
         )
         .properties(height=900)
@@ -533,7 +536,9 @@ if uploaded_file is not None:
             baseline="middle",
             fontSize=24,
             fontWeight=600,
-        ).encode(text=alt.Text("valor:Q", format="$,.2f"), color=alt.value("white"))
+        ).encode(
+            text=alt.Text("valor:Q", format="$,.2f"), color=alt.value(colors.white)
+        )
         # .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
     )
 
@@ -541,7 +546,6 @@ if uploaded_file is not None:
         (top10_expenses_by_supplier + label_top10_expenses_by_supplier).configure_axis(
             labelFontSize=16,
             titleFontSize=20,
-            titleColor="#f19904",
             grid=False,
             # labelAlign="right"
         ),
@@ -553,4 +557,35 @@ if uploaded_file is not None:
 
     st.subheader("15 maiores Fornecedores por ocorrências")
 
-    st.dataframe(top_15_supplier_expenses_counts)
+    top_15_by_occurrence = (
+        alt.Chart(top_15_supplier_expenses_counts)
+        .mark_bar()
+        .encode(
+            alt.Y(
+                "count:Q",
+                axis=alt.Axis(title=None, labels=False),
+            ),
+            alt.X(
+                "fornecedor:N",
+                sort=alt.EncodingSortField("count", op="max", order="descending"),
+                axis=alt.Axis(title=None, labelAngle=25, labelFontSize=18),
+            ),
+            color=alt.condition(
+                alt.datum.position < 3,
+                alt.value(colors.orange),
+                alt.value(colors.light_gray),  ## higlight only top 3 expenses
+            ),
+        )
+        .properties(height=600)
+    )
+    label_top_15_by_occurrence = top_15_by_occurrence.mark_text(
+        align="center",
+        baseline="top",
+        fontSize=30,
+        fontWeight=600,
+    ).encode(text=alt.Text("count:Q"), color=alt.value(colors.white))
+
+    st.altair_chart(
+        top_15_by_occurrence + label_top_15_by_occurrence,
+        use_container_width=True,
+    )
