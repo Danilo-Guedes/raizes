@@ -568,7 +568,7 @@ if uploaded_file is not None:
             alt.X(
                 "fornecedor:N",
                 sort=alt.EncodingSortField("count", op="max", order="descending"),
-                axis=alt.Axis(title=None, labelAngle=25, labelFontSize=18),
+                axis=alt.Axis(title=None, labelAngle=25, labelFontSize=18, labelBaseline="top"),
             ),
             color=alt.condition(
                 alt.datum.position < 3,
