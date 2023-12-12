@@ -1,0 +1,5 @@
+dark_green = "#003400"
+light_green = "#a7c52b"
+light_gray = "#b0b0b0"
+orange = "#f19904"
+white = "white"
