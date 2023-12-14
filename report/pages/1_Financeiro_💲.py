@@ -38,11 +38,10 @@ if uploaded_file is not None:
         top_15_supplier_expenses_counts,
         top_10_fixes_expenses,
         top_10_variables_expenses,
+        top_15_higher_single_values_expenses,
     ) = load_financial_data(uploaded_file)
 
     st.balloons()
-
-    
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -303,9 +302,8 @@ if uploaded_file is not None:
     )
 
     st.divider()
-    
-    st.subheader("10 maiores despesas fixas")
 
+    st.subheader("10 maiores despesas fixas")
 
     top10_variables_expenses = (
         alt.Chart(top_10_fixes_expenses)
@@ -356,11 +354,9 @@ if uploaded_file is not None:
         use_container_width=True,
     )
 
-    
     st.divider()
 
     st.subheader("10 maiores despesas variáveis")
-
 
     top10_variables_expenses = (
         alt.Chart(top_10_variables_expenses)
@@ -378,7 +374,7 @@ if uploaded_file is not None:
                     titlePadding=15,
                     format="$,.2f",
                 ),
-                scale=alt.Scale(type="log" , base=10, domain=[300,40_000])
+                scale=alt.Scale(type="log", base=10, domain=[300, 40_000]),
             ),
             color=alt.condition(
                 alt.datum.position <= 3,
@@ -412,5 +408,59 @@ if uploaded_file is not None:
         use_container_width=True,
     )
 
+    st.divider()
 
+    st.subheader("15 maiores despesas com valores com valores únicos (sem pro-labore)")
 
+    top_15_higher_single_values_exp = (
+        alt.Chart(top_15_higher_single_values_expenses)
+        .mark_bar()
+        .encode(
+            alt.Y(
+                "position_with_name:O",
+                sort=alt.EncodingSortField("valor", order="descending"),
+                axis=alt.Axis(title=None),
+            ),
+            alt.X(
+                "valor:Q",
+                axis=alt.Axis(
+                    title="R$ Valor",
+                    titlePadding=15,
+                    format="$,.2f",
+                ),
+                # scale=alt.Scale(type="log" , base=10, domain=[300,40_000])
+            ),
+            color=alt.condition(
+                alt.datum.position <= 3,
+                alt.value(colors.orange),
+                alt.value(colors.light_gray),  ## higlight only top 3 expenses
+            ),
+        )
+        .properties(height=900)
+    )
+
+    label_top15_higher_single_values_exp = (
+        top_15_higher_single_values_exp.mark_text(
+            align="right",
+            baseline="middle",
+            fontSize=24,
+            fontWeight=600,
+        ).encode(
+            text=alt.Text("valor:Q", format="$,.2f"),
+            color=alt.value(colors.white),
+        )
+        # .transform_calculate(percentage=f"datum.valor / {expenses_df['valor'].sum()}")
+    )
+
+    st.altair_chart(
+        (
+            top_15_higher_single_values_exp + label_top15_higher_single_values_exp
+        ).configure_axis(
+            labelFontSize=16,
+            titleFontSize=20,
+            grid=False,
+            # labelAlign="right"
+        ),
+        # .configure_view(stroke=None, clip=False)
+        use_container_width=True,
+    )

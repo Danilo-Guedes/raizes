@@ -66,8 +66,6 @@ def load_financial_data(file):
     income_df = df.loc[df["tipo"] == "receita"]
     expenses_df = df.loc[df["tipo"] == "despesa"]
 
-    print(expenses_df.head)
-
     fixes_expenses = expenses_df[expenses_df["categoria"].str.contains("#f")]
 
     variables_expenses = expenses_df[expenses_df["categoria"].str.contains("#v")]
@@ -295,14 +293,32 @@ def load_financial_data(file):
         .sort_values(by="valor", ascending=False)
         .assign(position=range(1, 11))
     )
-    print("top_10_fixes_expenses: ", top_10_fixes_expenses)
 
     top_10_variables_expenses = (
         variables_expenses_by_category.nlargest(10, "valor")
         .sort_values(by="valor", ascending=False)
         .assign(position=range(1, 11))
     )
-    print("top_10_variables_expenses: ", top_10_variables_expenses)
+
+    top_15_higher_single_values_expenses = (
+        expenses_df[~expenses_df["fornecedor"].isin(supplier_to_exclude)]
+        .nlargest(15, "valor")
+        .sort_values(by="valor", ascending=False)
+        .drop(
+            labels=[
+                "id",
+                "dia",
+                "mes",
+                "ano",
+                "dia_semana",
+                "banco",
+                "tipo"
+            ],
+            axis="columns",
+        )
+        .assign(position=range(1, 16))
+        .assign(position_with_name=lambda x: x["position"].astype(str) + " " + x["fornecedor"])
+    )
 
     # SET VALUES TO CURRENCY
 
@@ -342,4 +358,5 @@ def load_financial_data(file):
         top_15_supplier_expenses_counts,
         top_10_fixes_expenses,
         top_10_variables_expenses,
+        top_15_higher_single_values_expenses,
     )
