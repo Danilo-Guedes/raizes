@@ -1,6 +1,7 @@
 import locale
 from dotenv import load_dotenv
 from colorama import init
+import json
 
 from tasks.tasks import (
     call_bling_api,
@@ -14,6 +15,7 @@ from tasks.tasks import (
 def main():
     search_date_str = input("Qual data deseja pesquisar?  : ")
     sales = call_bling_api(search_date_str)
+    # sales = json.load(open("json/call_bling_api_resp.json", "r"))
     products_list = api_response_to_list(sales)
     clean_df = generate_clean_df(products_list)
     info = prepare_relevant_info(clean_df)
