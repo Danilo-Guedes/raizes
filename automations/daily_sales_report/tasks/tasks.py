@@ -1,6 +1,7 @@
 import os
 import pyperclip
 import locale
+import json
 
 from playwright.sync_api import sync_playwright
 from colorama import Fore
@@ -11,17 +12,14 @@ from datetime import datetime
 from appdirs import user_config_dir
 from tqdm import tqdm
 
-from api.bling import  get_sales_by_date, get_sale_by_id
+from api.bling import get_sales_by_date, get_sale_by_id
 from utils.strings import handle_week_text
 from auth.bling import get_access_data
 from classes import DailyInfo
 
 
-
 def call_bling_api(date_string):
     try:
-
-
         resp = get_sales_by_date(date_string)
 
         sales_ids = [item.get("id") for item in resp]
@@ -33,9 +31,7 @@ def call_bling_api(date_string):
 
         final_data = []
 
-
-        access_data = get_access_data() # getting fresh access data if needed
-
+        access_data = get_access_data()  # getting fresh access data if needed
 
         for id in tqdm(sales_ids, desc="Requisitando os detalhes das vendas..."):
             resp = get_sale_by_id(id, access_data)
@@ -43,6 +39,11 @@ def call_bling_api(date_string):
             final_data.append(resp)
 
         # print("final_data: ", final_data)
+
+        final_data_in_json = json.dumps(final_data)
+
+        with open(f"{Path.cwd()}/json/call_bling_api_resp.json", "w") as f:
+            f.write(final_data_in_json)
 
         return final_data
 
@@ -58,16 +59,20 @@ def api_response_to_list(raw_sales):
     list_of_products = []
 
     for sales in raw_sales:
-
         if sales.get("desconto").get("valor", 0) > 0:
             disccount_value: float = sales.get("totalProdutos") - sales.get("total")
+
             item_to_disccount = max(
                 sales.get("itens", []), key=lambda x: x.get("valor", 0)
             )
 
-            item_to_disccount["valor"] = (
-                item_to_disccount.get("valor", 0) - disccount_value
+            original_value = item_to_disccount.get("valor", 0)
+
+            proporcional_disccount = disccount_value / item_to_disccount.get(
+                "quantidade", 1
             )
+
+            item_to_disccount["valor"] = original_value - proporcional_disccount
 
         for item in sales.get("itens"):
             list_of_products.append(item)
