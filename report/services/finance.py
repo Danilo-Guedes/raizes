@@ -58,8 +58,12 @@ def load_financial_data(file):
     df.loc[empty_category, "categoria"] = "Sem Categoria #v"
     ## end-main df cleanup and enhancements
 
-    ## remove ! symbols
+    ## remove ! symbols and transfers beetwen accounts
     df = df[df["categoria"].str.contains("!", regex=False, na=True) == False]
+    df = df[df["categoria"].str.contains("Transferências de entrada", regex=False, na=True) == False]
+    df = df[df["categoria"].str.contains("Transferências de saída", regex=False, na=True) == False]
+
+
 
     ## extract totals and relevant data
 
