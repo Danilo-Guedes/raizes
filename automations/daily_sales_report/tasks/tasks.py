@@ -198,6 +198,7 @@ E essa é a tabela dos 7 produtos com maior valor de venda
                 headless=False,
                 args=["--start-maximized"],
                 no_viewport=True,
+                timeout= 60 * 1000
             )
 
             page = context.new_page()
@@ -207,7 +208,7 @@ E essa é a tabela dos 7 produtos com maior valor de venda
             )
             # print(url)
             print(f"abrindo {page.title()}")
-            page.goto(url, wait_until="domcontentloaded")
+            page.goto(url, wait_until="domcontentloaded", timeout= 60 * 1000)
             print("WhatsappWeb Acessado com Sucesso!")
             msg_input = page.locator("div [title='Digite uma mensagem']")
             msg_input.fill(msg)
